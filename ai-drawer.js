@@ -36,7 +36,7 @@ async function startAIDrawing(task) {
         
     } catch (error) {
         console.error('❌ Ошибка AI:', error);
-        alert('Не удалось сгенерировать рисунок. Попробуйте ещё раз.');
+        alert(error?.message || 'Не удалось сгенерировать рисунок. Попробуйте ещё раз.');
     } finally {
         aiDrawing = false;
     }

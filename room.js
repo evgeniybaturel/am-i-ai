@@ -275,6 +275,8 @@ async function leaveRoom() {
     currentRoomId = null;
     myRole = null;
     removeRoomListener();
+    removeGameListener();
+    if (typeof resetGameState === 'function') resetGameState();
     hideCloseButton();
 
     // Показываем стартовый экран
@@ -303,9 +305,9 @@ function showCreatedRoom(code) {
 }
 
 function showRoomReady() {
-    const wait = document.querySelector(".waiting p");
+    const wait = document.getElementById("lobby-status-text");
     if (wait) {
-        wait.textContent = "✅ Игрок найден. Начинаем...";
+        wait.textContent = "Игрок найден. Начинаем...";
     }
 }
 

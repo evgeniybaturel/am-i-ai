@@ -7,6 +7,8 @@
 let gameListenerStarted = false;
 let myVote = false;
 let selectedVoteId = null;
+let selectedVoteLabel = null;
+let activeDrawTask = null; // task currently rendered on the canvas — guards against re-initializing mid-drawing
 
 let gameRef = null;
 let gameCallback = null;
@@ -62,12 +64,16 @@ function listenGame() {
         if (game.status === "drawing") {
             // Проверяем, есть ли рисунок этого игрока
             const hasMyDrawing = game.drawings && game.drawings[myRole] && game.drawings[myRole].finished;
-            
+
             if (hasMyDrawing) {
                 // Если игрок уже отправил рисунок - показываем экран ожидания
+                activeDrawTask = null;
                 openWait();
-            } else {
-                // Иначе показываем экран рисования
+            } else if (activeDrawTask !== game.task) {
+                // Открываем экран рисования только один раз за задание.
+                // Иначе каждое обновление комнаты (например, когда второй игрок
+                // отправляет свой рисунок) заново сбрасывало бы холст и таймер.
+                activeDrawTask = game.task;
                 openDrawScreen(game.task);
             }
         }
@@ -165,53 +171,55 @@ function openVoting(drawings) {
     if (!container) return;
     container.innerHTML = "";
 
+    // Метки специально анонимны (A / B / C) — реальная роль (Игрок 1/2/ИИ)
+    // не должна быть видна до момента голосования, иначе это выдаёт ответ.
     const cards = [
-        { id: "player1", image: drawings.player1.image, label: "Игрок 1" },
-        { id: "player2", image: drawings.player2.image, label: "Игрок 2" },
-        { id: "ai", image: drawings.ai.image, label: "ИИ" }
+        { id: "player1", image: drawings.player1.image },
+        { id: "player2", image: drawings.player2.image },
+        { id: "ai", image: drawings.ai.image }
     ];
 
     shuffle(cards);
+    const letters = ["A", "B", "C"];
 
-    cards.forEach(item => {
+    cards.forEach((item, index) => {
+        const displayLabel = `Экспонат ${letters[index]}`;
+
         const card = document.createElement("div");
         card.className = "vote-card";
         card.dataset.id = item.id;
 
         const img = document.createElement("img");
         img.src = item.image;
-        img.alt = item.label;
+        img.alt = displayLabel;
         img.loading = "lazy";
 
         const label = document.createElement("div");
         label.className = "vote-label";
-        label.textContent = item.label;
+        label.textContent = displayLabel;
 
         card.appendChild(img);
         card.appendChild(label);
 
-        card.onclick = () => selectVote(card, item.id);
+        card.onclick = () => selectVote(card, item.id, displayLabel);
         container.appendChild(card);
     });
 
     document.getElementById('vote-confirm')?.classList.add('hidden');
     selectedVoteId = null;
+    selectedVoteLabel = null;
 }
 
-function selectVote(card, id) {
+function selectVote(card, id, displayLabel) {
     document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedVoteId = id;
+    selectedVoteLabel = displayLabel;
 
     const confirmEl = document.getElementById('vote-confirm');
     const textEl = document.getElementById('vote-selected-text');
     if (confirmEl && textEl) {
-        const labels = {
-            'player1': 'Игрок 1',
-            'player2': 'Игрок 2',
-            'ai': 'Искусственный интеллект'
-        };
-        textEl.textContent = `Выбрано: ${labels[id] || id}`;
+        textEl.textContent = `Выбор: ${displayLabel}`;
         confirmEl.classList.remove('hidden');
     }
 }
@@ -265,33 +273,65 @@ async function finishGame(votes) {
 // RESULT
 // ============================================================
 
+function describeAnswer(vote) {
+    if (vote === 'ai') return 'рисунок нейросети';
+    if (vote === 'player1') return 'рисунок игрока 1';
+    if (vote === 'player2') return 'рисунок игрока 2';
+    return 'неизвестно';
+}
+
 function showResultScreen(game) {
     showScreen("result-screen");
 
     const el = document.getElementById("result-text");
-    const icon = document.getElementById("result-icon");
+    const stamp = document.getElementById("result-icon");
     const title = document.getElementById("result-title");
-    
+    const gallery = document.getElementById("reveal-gallery");
+
     if (!el) return;
 
-    const p1Vote = game.finalVotes?.player1?.answer || 'n/a';
-    const p2Vote = game.finalVotes?.player2?.answer || 'n/a';
+    const p1Vote = game.finalVotes?.player1?.answer || null;
+    const p2Vote = game.finalVotes?.player2?.answer || null;
+    const p1Correct = p1Vote === 'ai';
+    const p2Correct = p2Vote === 'ai';
+    const aiCaught = p1Correct || p2Correct;
 
-    let text = "<p><strong>Результаты голосования:</strong></p>";
-    text += `<p>👤 Игрок 1 выбрал: <span class="highlight">${p1Vote === 'ai' ? '🤖 ИИ' : p1Vote === 'player1' ? '👤 Игрок 1' : '👤 Игрок 2'}</span></p>`;
-    text += `<p>👤 Игрок 2 выбрал: <span class="highlight">${p2Vote === 'ai' ? '🤖 ИИ' : p2Vote === 'player1' ? '👤 Игрок 1' : '👤 Игрок 2'}</span></p>`;
+    let text = "";
+    text += `<p>Игрок 1 указал на <span class="highlight">${describeAnswer(p1Vote)}</span> — <span class="${p1Correct ? 'correct' : 'wrong'}">${p1Correct ? 'точное попадание' : 'мимо'}</span>.</p>`;
+    text += `<p>Игрок 2 указал на <span class="highlight">${describeAnswer(p2Vote)}</span> — <span class="${p2Correct ? 'correct' : 'wrong'}">${p2Correct ? 'точное попадание' : 'мимо'}</span>.</p>`;
+    el.innerHTML = text;
 
-    if (p1Vote === 'ai' || p2Vote === 'ai') {
-        text += `<p>🎉 <strong>ИИ раскрыт!</strong> Игроки оказались проницательными!</p>`;
-        if (icon) icon.textContent = '🎉';
-        if (title) title.textContent = 'ИИ раскрыт!';
-    } else {
-        text += `<p>🎭 <strong>ИИ смог обмануть людей!</strong> Машина победила!</p>`;
-        if (icon) icon.textContent = '🎭';
-        if (title) title.textContent = 'ИИ победил!';
+    if (stamp) {
+        stamp.className = 'stamp ' + (aiCaught ? 'caught' : 'escaped');
+        stamp.textContent = aiCaught ? 'ИИ раскрыт' : 'ИИ не найден';
+    }
+    if (title) {
+        title.textContent = aiCaught ? 'Подделку нашли' : 'Нейросеть обманула всех';
     }
 
-    el.innerHTML = text;
+    if (gallery && game.drawings) {
+        gallery.innerHTML = "";
+        const items = [
+            { image: game.drawings.player1?.image, label: 'Игрок 1', isAi: false },
+            { image: game.drawings.player2?.image, label: 'Игрок 2', isAi: false },
+            { image: game.drawings.ai?.image, label: 'Нейросеть', isAi: true }
+        ];
+        items.forEach(item => {
+            if (!item.image) return;
+            const card = document.createElement('div');
+            card.className = 'reveal-card' + (item.isAi ? ' is-ai' : '');
+            const img = document.createElement('img');
+            img.src = item.image;
+            img.alt = item.label;
+            img.loading = 'lazy';
+            const label = document.createElement('div');
+            label.className = 'reveal-label';
+            label.textContent = item.label;
+            card.appendChild(img);
+            card.appendChild(label);
+            gallery.appendChild(card);
+        });
+    }
 }
 
 // ============================================================
@@ -301,6 +341,8 @@ function showResultScreen(game) {
 function resetGameState() {
     myVote = false;
     selectedVoteId = null;
+    selectedVoteLabel = null;
+    activeDrawTask = null;
 }
 
 // ============================================================
@@ -337,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'));
         document.getElementById('vote-confirm')?.classList.add('hidden');
         selectedVoteId = null;
+        selectedVoteLabel = null;
     });
 });
 
