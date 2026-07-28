@@ -5,12 +5,9 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>
-Not a Human: Draw
-</title>
-
+<title>Not a Human - Draw</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -23,63 +20,50 @@ Not a Human: Draw
 <div id="app">
 
 
-<!-- START -->
+
+<!-- =========================
+START
+========================= -->
+
 
 <section id="start-screen">
 
 
-<div class="logo">
-
-<span>◉</span>
-
-Not a Human
-
-</div>
-
-
 <h1>
-DRAW
+Not a Human
 </h1>
 
 
 <p class="subtitle">
-
-Тест Тьюринга через рисунок
-
+Нарисуй как человек.<br>
+Или обмани всех, что ты человек.
 </p>
 
 
 
-<div class="description">
-
-Нарисуй лучше, чем искусственный интеллект.<br>
-
-Или заставь всех поверить, что ты человек.
-
-</div>
 
 
+<div class="card">
 
 
-<div class="panel">
-
-
-<button
-class="main-btn"
+<button 
+class="btn"
 id="create-room-btn">
 
-Создать эксперимент
+🎨 Создать комнату
 
 </button>
 
 
+
 </div>
 
 
 
 
 
-<div class="panel">
+
+<div class="card">
 
 
 <input
@@ -93,14 +77,13 @@ maxlength="6"
 >
 
 
-
 <button
 
-class="second-btn"
+class="btn secondary"
 
 id="join-room-btn">
 
-Подключиться
+🔗 Войти
 
 </button>
 
@@ -119,27 +102,23 @@ id="join-room-btn">
 
 
 
-<!-- LOBBY -->
+<!-- =========================
+LOBBY
+========================= -->
 
 
-<section
-
+<section 
 id="lobby-screen"
-
 class="hidden">
 
 
-
 <h2>
-Эксперимент готов
+Комната
 </h2>
 
 
 
-<div class="room-card">
-
-
-Код комнаты:
+<div class="experiment-box">
 
 
 <strong id="room-display">
@@ -152,12 +131,39 @@ class="hidden">
 
 
 
+
+<div id="created-room"
+class="room-code">
+
+
+</div>
+
+
+
+
+
+
 <div class="waiting">
 
 
-Ожидание второго художника...
+⏳ Ожидание игрока...
 
 </div>
+
+
+
+
+
+
+<button
+
+class="btn secondary"
+
+id="leave-room-btn">
+
+🚪 Выйти из комнаты
+
+</button>
 
 
 
@@ -171,7 +177,9 @@ class="hidden">
 
 
 
-<!-- DRAW -->
+<!-- =========================
+DRAW
+========================= -->
 
 
 <section
@@ -182,37 +190,22 @@ class="hidden">
 
 
 
-
-
-<header>
-
-
-<div>
-
-Задание
-
-</div>
-
-
-<div id="timer">
-
-60
-
-</div>
-
-
-</header>
+<h2>
+Нарисуй это:
+</h2>
 
 
 
 
 
-<div class="task-card">
+<div
+
+class="task-card">
 
 
 <p id="task-text">
 
-Подготовка задания...
+Загрузка задания...
 
 </p>
 
@@ -224,13 +217,16 @@ class="hidden">
 
 
 
-
 <div class="canvas-wrapper">
 
 
 <canvas
 
-id="draw-canvas">
+id="drawing-canvas"
+
+width="350"
+
+height="350">
 
 </canvas>
 
@@ -243,59 +239,52 @@ id="draw-canvas">
 
 
 
-<div class="tools">
-
-
-
-<button
-id="clear-btn">
-
-✕
-
-</button>
-
-
-
-<input
-
-type="color"
-
-id="color-picker"
-
-value="#111111"
-
->
-
-
-
-<input
-
-type="range"
-
-id="size-picker"
-
-min="2"
-
-max="25"
-
-value="5"
-
->
+<div class="draw-buttons">
 
 
 
 <button
 
-id="finish-draw-btn">
+class="btn secondary"
 
-✓
+id="clear-canvas-btn">
+
+🗑 Очистить
 
 </button>
+
+
+
+
+
+<button
+
+class="btn"
+
+id="send-drawing-btn">
+
+✅ Готово
+
+</button>
+
 
 
 </div>
 
 
+
+
+
+
+<div
+
+id="draw-status"
+
+class="waiting hidden">
+
+Ожидаем второго игрока...
+
+</div>
 
 
 
@@ -309,7 +298,9 @@ id="finish-draw-btn">
 
 
 
-<!-- WAIT -->
+<!-- =========================
+WAIT
+========================= -->
 
 
 <section
@@ -321,14 +312,15 @@ class="hidden">
 
 <h2>
 
-Рисунок готов
+Готово!
 
 </h2>
 
 
+
 <div class="waiting">
 
-Ждём остальных участников...
+Ждём второго игрока...
 
 </div>
 
@@ -343,7 +335,9 @@ class="hidden">
 
 
 
-<!-- VOTE -->
+<!-- =========================
+VOTE
+========================= -->
 
 
 <section
@@ -353,15 +347,31 @@ id="vote-screen"
 class="hidden">
 
 
+
 <h2>
 
-Кто здесь ИИ?
+Кто настоящий человек?
 
 </h2>
 
 
 
-<div id="images-container">
+<p class="hint">
+
+Выберите рисунок ИИ
+
+</p>
+
+
+
+
+
+
+<div
+
+id="images-container"
+
+class="images-container">
 
 </div>
 
@@ -377,7 +387,9 @@ class="hidden">
 
 
 
-<!-- RESULT -->
+<!-- =========================
+RESULT
+========================= -->
 
 
 <section
@@ -385,6 +397,7 @@ class="hidden">
 id="result-screen"
 
 class="hidden">
+
 
 
 <h1>
@@ -395,17 +408,23 @@ class="hidden">
 
 
 
-<div class="result-card"
+
+<div
+
+class="result-card"
 
 id="result-text">
+
 
 </div>
 
 
 
+
+
 <button
 
-class="main-btn"
+class="btn"
 
 onclick="location.reload()">
 
@@ -415,7 +434,11 @@ onclick="location.reload()">
 
 
 
+
 </section>
+
+
+
 
 
 
@@ -433,6 +456,7 @@ onclick="location.reload()">
 
 <!-- FIREBASE -->
 
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -441,7 +465,8 @@ onclick="location.reload()">
 
 
 
-<!-- PROJECT -->
+<!-- FILES -->
+
 
 <script src="firebase.js"></script>
 
@@ -449,9 +474,7 @@ onclick="location.reload()">
 
 <script src="room.js"></script>
 
-<script src="drawing.js"></script>
-
-<script src="ai-drawer.js"></script>
+<script src="canvas.js"></script>
 
 <script src="game.js"></script>
 
