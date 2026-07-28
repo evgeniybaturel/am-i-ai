@@ -3,7 +3,7 @@
 // AM I AI - Бесплатная генерация
 // ============================================================
 
-const HF_API_KEY = 'hf_ваш_ключ_здесь'; // Получить на huggingface.co/settings/tokens
+const HF_API_KEY = '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'; // Получить на huggingface.co/settings/tokens
 
 // ============================================================
 // ГЕНЕРАЦИЯ ЗАДАНИЯ (упрощённая)
