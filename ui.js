@@ -4,10 +4,6 @@
 // Screen manager
 // ============================================================
 
-// ============================================================
-// SCREEN CONTROL
-// ============================================================
-
 function showScreen(id) {
     document.querySelectorAll(".screen").forEach(screen => {
         screen.classList.remove("active");
@@ -21,25 +17,13 @@ function showScreen(id) {
     }
 }
 
-// ============================================================
-// START
-// ============================================================
-
 function openStart() {
     showScreen("start-screen");
 }
 
-// ============================================================
-// LOBBY
-// ============================================================
-
 function openLobby() {
     showScreen("lobby-screen");
 }
-
-// ============================================================
-// DRAW
-// ============================================================
 
 function openDrawing() {
     showScreen("draw-screen");
@@ -51,36 +35,19 @@ function openDrawing() {
     }, 100);
 }
 
-// ============================================================
-// WAIT
-// ============================================================
-
 function openWait() {
     showScreen("wait-screen");
-    // Сбрасываем прогресс
     const progress = document.getElementById('ai-progress');
     if (progress) progress.style.width = '0%';
 }
-
-// ============================================================
-// VOTE
-// ============================================================
 
 function openVote() {
     showScreen("vote-screen");
 }
 
-// ============================================================
-// RESULT
-// ============================================================
-
 function openResult() {
     showScreen("result-screen");
 }
-
-// ============================================================
-// ROOM DISPLAY
-// ============================================================
 
 function updateRoomCode(code) {
     const el = document.getElementById("room-display");
@@ -111,7 +78,6 @@ function startTimer() {
         timerValue--;
         if (timer) timer.textContent = timerValue;
         
-        // Обновляем круговой прогресс
         if (progress) {
             const circumference = 2 * Math.PI * 15.9155;
             const offset = circumference - (timerValue / 60) * circumference;
@@ -131,23 +97,6 @@ function startTimer() {
 function stopTimer() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
-}
-
-// ============================================================
-// DRAW STATUS
-// ============================================================
-
-function showDrawStatus(text) {
-    const el = document.getElementById("draw-status");
-    if (el) {
-        el.textContent = text;
-        el.classList.remove("hidden");
-    }
-}
-
-function hideDrawStatus() {
-    const el = document.getElementById("draw-status");
-    if (el) el.classList.add("hidden");
 }
 
 // ============================================================
