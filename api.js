@@ -1,9 +1,7 @@
 // ============================================================
-// API ENGINE with Hugging Face
-// AM I AI - Бесплатная генерация
+// API ENGINE с Pollinations AI
+// AM I AI - Только Pollinations, без локального ИИ
 // ============================================================
-
-const HF_API_KEY = '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';
 
 // ============================================================
 // ГЕНЕРАЦИЯ ЗАДАНИЯ
@@ -30,68 +28,52 @@ async function generateTask() {
 }
 
 // ============================================================
-// ГЕНЕРАЦИЯ РИСУНКА ЧЕРЕЗ HUGGING FACE
+// ГЕНЕРАЦИЯ РИСУНКА ЧЕРЕЗ POLLINATIONS AI
 // ============================================================
 async function generateAIDrawing(task) {
+    console.log('🎨 Генерируем рисунок через Pollinations AI для:', task);
+    
+    const imageData = await generateWithPollinations(task);
+    
+    if (!imageData) {
+        throw new Error('Pollinations AI не вернул изображение');
+    }
+    
+    return imageData;
+}
+
+async function generateWithPollinations(task) {
+    // Формируем промпт для генерации
+    const prompt = `simple sketch of ${task}, black and white line drawing, hand-drawn style, children's drawing, rough lines, minimalistic`;
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true`;
+    
+    console.log(`📡 Отправка запроса в Pollinations...`);
+    
     try {
-        const result = await generateWithHuggingFace(task);
-        if (result) return result;
-    } catch (e) {
-        console.log('Hugging Face failed:', e.message);
-    }
-    
-    console.log('Using fallback drawing generator');
-    return fakeHumanDrawing();
-}
-
-async function generateWithHuggingFace(task) {
-    if (!HF_API_KEY) {
-        console.warn('❌ HF_API_KEY не настроен');
-        return null;
-    }
-
-    const models = [
-        'black-forest-labs/FLUX.1-dev',
-        'stabilityai/stable-diffusion-2-1',
-        'runwayml/stable-diffusion-v1-5'
-    ];
-    
-    const model = models[Math.floor(Math.random() * models.length)];
-    
-    const prompt = `black and white simple sketch of ${task}, rough drawing, children's style, uneven lines, simple shapes, hand-drawn`;
-    
-    console.log(`🤖 Отправляем запрос в Hugging Face (${model})...`);
-    
-    const response = await fetch(
-        `https://api-inference.huggingface.co/models/${model}`,
-        {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${HF_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                inputs: prompt,
-                parameters: {
-                    negative_prompt: "realistic, detailed, perfect, polished, 3d, photo, colorful, professional, ugly",
-                    num_inference_steps: 20,
-                    guidance_scale: 7.0,
-                    width: 512,
-                    height: 512
-                }
-            })
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`Pollinations error: ${response.status}`);
         }
-    );
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Hugging Face error:', response.status, errorText);
-        return null;
+        
+        // Проверяем, что пришло изображение
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.startsWith('image/')) {
+            throw new Error('Pollinations вернул не изображение');
+        }
+        
+        const blob = await response.blob();
+        return await blobToBase64(blob);
+        
+    } catch (error) {
+        console.error('❌ Ошибка Pollinations:', error.message);
+        throw error;
     }
-    
-    const blob = await response.blob();
-    return await blobToBase64(blob);
 }
+
+// ============================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================
 
 function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
@@ -103,69 +85,9 @@ function blobToBase64(blob) {
 }
 
 // ============================================================
-// FALLBACK ГЕНЕРАТОР
-// ============================================================
-function fakeHumanDrawing() {
-    const colors = ['#111111', '#222222', '#333333', '#1a1a2e'];
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    
-    const shapes = [];
-    const numShapes = 5 + Math.floor(Math.random() * 8);
-    
-    for (let i = 0; i < numShapes; i++) {
-        const type = ['polygon', 'circle', 'line', 'polygon'][Math.floor(Math.random() * 4)];
-        
-        if (type === 'polygon') {
-            const points = [];
-            const numPoints = 3 + Math.floor(Math.random() * 5);
-            const cx = 150 + Math.random() * 200;
-            const cy = 150 + Math.random() * 200;
-            const radius = 30 + Math.random() * 80;
-            
-            for (let j = 0; j < numPoints; j++) {
-                const angle = (j / numPoints) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
-                points.push({
-                    x: Math.round(cx + Math.cos(angle) * radius * (0.7 + Math.random() * 0.3)),
-                    y: Math.round(cy + Math.sin(angle) * radius * (0.7 + Math.random() * 0.3))
-                });
-            }
-            shapes.push({
-                type: 'polygon',
-                points: points,
-                color: color,
-                fill: Math.random() > 0.5,
-                width: 3 + Math.random() * 4
-            });
-        } else if (type === 'circle') {
-            shapes.push({
-                type: 'circle',
-                x: Math.round(100 + Math.random() * 300),
-                y: Math.round(100 + Math.random() * 300),
-                radius: 20 + Math.random() * 60,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                fill: Math.random() > 0.6,
-                width: 3 + Math.random() * 3
-            });
-        } else {
-            shapes.push({
-                type: 'line',
-                x1: Math.round(50 + Math.random() * 400),
-                y1: Math.round(50 + Math.random() * 400),
-                x2: Math.round(50 + Math.random() * 400),
-                y2: Math.round(50 + Math.random() * 400),
-                color: color,
-                width: 3 + Math.random() * 4
-            });
-        }
-    }
-    
-    return { actions: shapes };
-}
-
-// ============================================================
 // ЭКСПОРТ
 // ============================================================
 window.generateTask = generateTask;
 window.generateAIDrawing = generateAIDrawing;
 
-console.log('🤖 Am I AI API loaded with Hugging Face');
+console.log('🤖 Am I AI API loaded (только Pollinations AI)');
