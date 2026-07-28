@@ -1,79 +1,11 @@
 // ============================================================
 // AI DRAWER ENGINE
 // AM I AI
-// Human-like AI drawing FIXED
+// Human-like AI drawing
 // ============================================================
 
 
 let aiDrawing = false;
-
-let aiCanvas = null;
-
-let aiCtx = null;
-
-
-
-
-
-
-
-
-
-// ============================================================
-// CREATE AI CANVAS
-// ============================================================
-
-
-function createAICanvas(){
-
-
-
-    if(aiCanvas)
-        return;
-
-
-
-    aiCanvas =
-    document.createElement(
-        "canvas"
-    );
-
-
-
-    aiCanvas.width = 500;
-
-    aiCanvas.height = 500;
-
-
-
-
-
-    aiCtx =
-    aiCanvas.getContext(
-        "2d"
-    );
-
-
-
-
-
-    aiCtx.fillStyle =
-    "#ffffff";
-
-
-
-    aiCtx.fillRect(
-        0,
-        0,
-        500,
-        500
-    );
-
-
-
-
-
-}
 
 
 
@@ -97,7 +29,8 @@ async function startAIDrawing(task){
 
 
 
-    aiDrawing=true;
+    aiDrawing = true;
+
 
 
 
@@ -107,9 +40,6 @@ async function startAIDrawing(task){
     );
 
 
-
-
-    createAICanvas();
 
 
 
@@ -126,9 +56,11 @@ async function startAIDrawing(task){
 
 
 
+
     if(
         !drawing ||
-        !drawing.actions
+        !drawing.actions ||
+        drawing.actions.length===0
     ){
 
 
@@ -138,6 +70,8 @@ async function startAIDrawing(task){
 
 
     }
+
+
 
 
 
@@ -155,21 +89,11 @@ async function startAIDrawing(task){
 
 
 
+
     const image =
-    aiCanvas.toDataURL(
+    canvas.toDataURL(
         "image/png"
     );
-
-
-
-
-
-
-    console.log(
-        "AI image size:",
-        image.length
-    );
-
 
 
 
@@ -211,9 +135,12 @@ async function startAIDrawing(task){
 
 
 
+
+
     console.log(
         "🤖 AI drawing finished"
     );
+
 
 
 }
@@ -227,7 +154,7 @@ async function startAIDrawing(task){
 
 
 // ============================================================
-// EXECUTE ACTIONS
+// EXECUTE DRAWING
 // ============================================================
 
 
@@ -235,31 +162,30 @@ async function executeDrawing(actions){
 
 
 
-    if(!aiCtx)
+    if(
+        !ctx ||
+        !canvas
+    )
         return;
 
 
 
 
 
-    aiCtx.strokeStyle =
+
+
+    ctx.strokeStyle =
     "#111111";
 
 
 
-    aiCtx.lineWidth =
-    5;
-
-
-
-    aiCtx.lineCap =
+    ctx.lineCap =
     "round";
 
 
 
-    aiCtx.lineJoin =
+    ctx.lineJoin =
     "round";
-
 
 
 
@@ -279,11 +205,14 @@ async function executeDrawing(actions){
 
 
 
+
+
         if(
             action.type==="line"
         ){
 
-            drawLine(
+
+            await humanLine(
                 action
             );
 
@@ -299,9 +228,27 @@ async function executeDrawing(actions){
             action.type==="circle"
         ){
 
-            drawCircle(
+
+            await humanCircle(
                 action
             );
+
+
+        }
+
+
+
+
+
+
+        // иногда человек поправляет рисунок
+
+        if(
+            Math.random()<0.15
+        ){
+
+
+            await humanMistake();
 
 
         }
@@ -323,7 +270,352 @@ async function executeDrawing(actions){
 
 
 // ============================================================
-// HUMAN DELAY
+// HUMAN LINE
+// ============================================================
+
+
+async function humanLine(action){
+
+
+
+    const steps = 15 + Math.random()*15;
+
+
+
+    let x =
+    action.x1;
+
+
+
+    let y =
+    action.y1;
+
+
+
+
+
+    ctx.beginPath();
+
+
+
+    ctx.moveTo(
+        x,
+        y
+    );
+
+
+
+
+
+
+
+
+    for(
+        let i=1;
+        i<=steps;
+        i++
+    ){
+
+
+
+        const progress =
+        i / steps;
+
+
+
+
+
+        let nx =
+
+        action.x1 +
+        (
+            action.x2 -
+            action.x1
+        )
+        *
+        progress;
+
+
+
+
+
+
+        let ny =
+
+        action.y1 +
+        (
+            action.y2 -
+            action.y1
+        )
+        *
+        progress;
+
+
+
+
+
+
+
+        // дрожание руки
+
+        nx +=
+        randomHandError();
+
+
+
+        ny +=
+        randomHandError();
+
+
+
+
+
+
+
+        ctx.lineWidth =
+
+        4 +
+        Math.random()*3;
+
+
+
+
+
+
+
+        ctx.lineTo(
+            nx,
+            ny
+        );
+
+
+
+
+        ctx.stroke();
+
+
+
+        ctx.beginPath();
+
+
+
+        ctx.moveTo(
+            nx,
+            ny
+        );
+
+
+
+
+
+        await sleep(
+            20 + Math.random()*40
+        );
+
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// HUMAN CIRCLE
+// ============================================================
+
+
+async function humanCircle(action){
+
+
+
+    const points = 45;
+
+
+
+
+
+    ctx.beginPath();
+
+
+
+
+
+    for(
+        let i=0;
+        i<=points;
+        i++
+    ){
+
+
+
+        const angle =
+
+        Math.PI*2 *
+        (
+            i /
+            points
+        );
+
+
+
+
+
+
+
+
+        const radius =
+
+        action.radius +
+
+        randomHandError()*4;
+
+
+
+
+
+
+
+
+        const x =
+
+        action.x +
+
+        Math.cos(angle)
+        *
+        radius;
+
+
+
+
+
+
+
+
+        const y =
+
+        action.y +
+
+        Math.sin(angle)
+        *
+        radius;
+
+
+
+
+
+
+
+
+        if(i===0){
+
+
+            ctx.moveTo(
+                x,
+                y
+            );
+
+
+        }
+        else{
+
+
+            ctx.lineTo(
+                x,
+                y
+            );
+
+
+        }
+
+
+
+
+
+
+
+        ctx.lineWidth =
+
+        4 +
+        Math.random()*3;
+
+
+
+
+
+
+
+        ctx.stroke();
+
+
+
+
+
+
+        await sleep(
+            25 + Math.random()*50
+        );
+
+
+
+    }
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// RANDOM HAND MOVEMENT
+// ============================================================
+
+
+function randomHandError(){
+
+
+
+    return (
+
+        Math.random()-0.5
+
+    )
+    *
+    8;
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// PAUSES
 // ============================================================
 
 
@@ -332,12 +624,80 @@ function humanPause(){
 
 
     return new Promise(
+
+        resolve=>{
+
+
+            setTimeout(
+
+                resolve,
+
+                300 +
+                Math.random()*900
+
+            );
+
+
+        }
+
+    );
+
+
+}
+
+
+
+
+
+
+
+
+
+function humanMistake(){
+
+
+
+    return new Promise(
+
+        resolve=>{
+
+
+            setTimeout(
+
+                resolve,
+
+                500 +
+                Math.random()*1200
+
+            );
+
+
+        }
+
+    );
+
+
+}
+
+
+
+
+
+
+
+
+
+function sleep(ms){
+
+
+
+    return new Promise(
+
         resolve=>
 
         setTimeout(
             resolve,
-            200 +
-            Math.random()*700
+            ms
         )
 
     );
@@ -353,120 +713,6 @@ function humanPause(){
 
 
 
-// ============================================================
-// LINE
-// ============================================================
-
-
-function drawLine(action){
-
-
-
-    const scale =
-    aiCanvas.width / 500;
-
-
-
-
-
-    aiCtx.beginPath();
-
-
-
-    aiCtx.moveTo(
-
-        action.x1 * scale,
-
-        action.y1 * scale
-
-    );
-
-
-
-
-    aiCtx.lineTo(
-
-        action.x2 * scale,
-
-        action.y2 * scale
-
-    );
-
-
-
-
-
-    aiCtx.stroke();
-
-
-
-}
-
-
-
-
-
-
-
-
-
-// ============================================================
-// CIRCLE
-// ============================================================
-
-
-function drawCircle(action){
-
-
-
-    const scale =
-    aiCanvas.width / 500;
-
-
-
-
-
-    aiCtx.beginPath();
-
-
-
-    aiCtx.arc(
-
-        action.x * scale,
-
-        action.y * scale,
-
-        action.radius * scale,
-
-        0,
-
-        Math.PI * 2
-
-    );
-
-
-
-
-
-    aiCtx.stroke();
-
-
-
-}
-
-
-
-
-
-
-
-
-
-// ============================================================
-// EXPORT
-// ============================================================
-
-
 window.startAIDrawing =
 startAIDrawing;
 
@@ -479,5 +725,5 @@ startAIDrawing;
 
 
 console.log(
-"🤖 Am I AI AI drawer FIXED loaded"
+"🤖 Am I AI human drawer loaded"
 );
