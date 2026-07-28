@@ -1,288 +1,267 @@
-* {
+<!DOCTYPE html>
+<html lang="ru">
 
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+<head>
 
-}
+<meta charset="UTF-8">
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Am I AI</title>
 
-body {
+<link rel="stylesheet" href="style.css">
 
-    min-height:100vh;
+</head>
 
-    background:
-    radial-gradient(
-        circle at top,
-        #312e81,
-        #050507 70%
-    );
 
-    font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+<body>
 
-    color:white;
 
-    display:flex;
+<div id="app">
 
-    justify-content:center;
 
-    align-items:center;
 
-    padding:15px;
+<section id="start-screen">
 
-}
 
+<h1>
+Am I AI?
+</h1>
 
 
+<p class="subtitle">
 
+Нарисуй как человек.<br>
+И попробуй обмануть искусственный интеллект.
 
+</p>
 
 
-#app {
 
-    width:100%;
 
-    max-width:480px;
 
-    min-height:720px;
+<div class="panel">
 
-    background:
 
-    rgba(12,12,20,.95);
+<button
 
-    border:
+class="main-btn"
 
-    1px solid rgba(255,255,255,.1);
+id="create-room-btn">
 
-    border-radius:32px;
+🎨 Создать игру
 
-    padding:25px;
+</button>
 
-    box-shadow:
 
-    0 30px 90px rgba(0,0,0,.7);
 
-    overflow:hidden;
+</div>
 
-}
 
 
 
 
 
+<div class="panel">
 
 
-.hidden {
+<input
 
-    display:none !important;
+id="room-input"
 
-}
+placeholder="Код комнаты"
 
+maxlength="6"
 
+>
 
 
+<button
 
+class="second-btn"
 
+id="join-room-btn">
 
-section {
+🔗 Подключиться
 
-    display:flex;
+</button>
 
-    flex-direction:column;
 
-    gap:22px;
+</div>
 
-    animation:
 
-    fade .35s ease;
 
-}
+</section>
 
 
 
 
 
-@keyframes fade {
 
 
-from {
 
-    opacity:0;
 
-    transform:translateY(15px);
+<section
 
-}
+id="lobby-screen"
 
+class="hidden">
 
-to {
 
-    opacity:1;
 
-    transform:translateY(0);
+<h2>
 
-}
+Комната
 
+</h2>
 
-}
 
 
 
 
+<div class="room-card">
 
 
+<span>
 
+Код игры
 
+</span>
 
-h1 {
 
+<strong
 
-    text-align:center;
+id="room-display">
 
-    font-size:48px;
+</strong>
 
-    letter-spacing:4px;
 
-    background:
 
-    linear-gradient(
-        135deg,
-        #22d3ee,
-        #a855f7
-    );
+</div>
 
-    -webkit-background-clip:text;
 
-    color:transparent;
 
-}
 
 
 
+<div class="waiting">
 
 
-h2 {
+⏳ Ждём второго игрока...
 
-    text-align:center;
+</div>
 
-    font-size:28px;
 
-}
 
 
 
 
 
-h3 {
+<button
 
-    font-size:18px;
+class="second-btn"
 
-    color:#c4b5fd;
+id="leave-room-btn">
 
-}
+🚪 Выйти
 
+</button>
 
 
 
 
+</section>
 
 
-.subtitle {
 
 
-    text-align:center;
 
-    color:#a1a1aa;
 
-    font-size:17px;
 
-    line-height:1.5;
 
-}
 
+<section
 
+id="draw-screen"
 
+class="hidden">
 
 
 
 
 
+<header>
 
-/* PANELS */
 
+<span>
 
-.panel {
+Раунд рисования
 
+</span>
 
-    background:
 
-    rgba(255,255,255,.05);
 
+<span id="timer">
 
-    border:
+60
 
-    1px solid rgba(255,255,255,.1);
+</span>
 
 
-    border-radius:24px;
+</header>
 
 
-    padding:20px;
 
 
-}
 
 
 
 
+<div class="task-card">
 
 
+<h3>
 
-input {
+Твоё задание:
 
+</h3>
 
-    width:100%;
 
+<p
 
-    padding:16px;
+id="task-text">
 
+Создание задания...
 
-    border-radius:18px;
+</p>
 
 
-    border:
 
-    1px solid #3f3f55;
+</div>
 
 
-    background:#11111b;
 
 
-    color:white;
 
 
-    font-size:17px;
 
 
-    outline:none;
 
+<div class="canvas-wrapper">
 
-}
 
+<canvas
 
+id="draw-canvas"
 
-input:focus {
+width="500"
 
+height="500">
 
-    border-color:#a855f7;
+</canvas>
 
 
-}
+</div>
 
 
 
@@ -291,89 +270,86 @@ input:focus {
 
 
 
+<div class="tools">
 
-/* BUTTONS */
 
 
-button {
+<div class="color-palette">
 
 
-    border:none;
+<button class="color-btn active" data-color="#111111" style="background:#111111"></button>
 
-    cursor:pointer;
+<button class="color-btn" data-color="#ef4444" style="background:#ef4444"></button>
 
-    font-size:17px;
+<button class="color-btn" data-color="#f97316" style="background:#f97316"></button>
 
-    font-weight:600;
+<button class="color-btn" data-color="#eab308" style="background:#eab308"></button>
 
-    transition:.2s;
+<button class="color-btn" data-color="#22c55e" style="background:#22c55e"></button>
 
-}
+<button class="color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
 
+<button class="color-btn" data-color="#3b82f6" style="background:#3b82f6"></button>
 
+<button class="color-btn" data-color="#a855f7" style="background:#a855f7"></button>
 
-button:active {
+<button class="color-btn" data-color="#ec4899" style="background:#ec4899"></button>
 
 
-    transform:scale(.95);
+</div>
 
-}
 
 
 
 
+<input
 
+type="range"
 
-.main-btn {
+id="size-picker"
 
+min="2"
 
-    width:100%;
+max="25"
 
-    padding:17px;
+value="5"
 
-    border-radius:20px;
+>
 
-    color:white;
 
 
-    background:
 
-    linear-gradient(
-        135deg,
-        #8b5cf6,
-        #06b6d4
-    );
 
-}
+<button
 
+id="clear-btn">
 
+🗑
 
+</button>
 
 
 
+<button
 
-.second-btn {
+id="finish-draw-btn">
 
+Готово
 
-    width:100%;
+</button>
 
-    padding:16px;
 
-    border-radius:20px;
 
+</div>
 
-    color:white;
 
 
-    background:#20202f;
 
 
-    border:
 
-    1px solid #3f3f55;
 
-}
 
+</section>
 
 
 
@@ -382,166 +358,156 @@ button:active {
 
 
 
-/* ROOM */
 
+<section
 
-.room-card {
+id="wait-screen"
 
+class="hidden">
 
-    background:
 
-    linear-gradient(
-        135deg,
-        #111827,
-        #1e1b4b
-    );
 
+<h2>
 
-    border-radius:25px;
+Готово!
 
+</h2>
 
-    padding:25px;
 
 
-    text-align:center;
 
-}
+<div class="waiting">
 
 
+🤖 ИИ рисует свой вариант...
 
+</div>
 
 
-.room-card span {
 
+</section>
 
-    color:#a1a1aa;
 
-}
 
 
 
-.room-card strong {
 
 
-    display:block;
 
 
-    margin-top:15px;
+<section
 
+id="vote-screen"
 
-    font-size:42px;
+class="hidden">
 
 
-    letter-spacing:10px;
 
+<h2>
 
-    color:#22d3ee;
+Кто здесь ИИ?
 
-}
+</h2>
 
 
 
 
 
+<p class="subtitle">
 
+Выберите рисунок, который сделал искусственный интеллект.
 
-.waiting {
+</p>
 
 
-    text-align:center;
 
 
-    color:#a1a1aa;
 
 
-    padding:20px;
 
-}
 
+<div
 
+id="images-container"
 
+class="images-container">
 
+</div>
 
 
 
 
 
-/* DRAW */
 
+</section>
 
-header {
 
 
-    display:flex;
 
 
-    justify-content:space-between;
 
 
-    color:#a1a1aa;
 
 
-    font-size:18px;
+<section
 
+id="result-screen"
 
-}
+class="hidden">
 
 
 
-#timer {
+<h1>
 
+Эксперимент завершён
 
-    color:#22d3ee;
+</h1>
 
 
-    font-weight:bold;
 
 
-}
 
 
 
+<div
 
+class="result-card"
 
+id="result-text">
 
 
-.task-card {
+</div>
 
 
-    background:#181827;
 
 
-    border-radius:22px;
 
 
-    padding:20px;
 
+<button
 
-    border:
+class="main-btn"
 
-    1px solid #34344d;
+id="new-game-btn">
 
+Новая игра
 
-    text-align:center;
+</button>
 
-}
 
 
 
 
+</section>
 
 
 
-#task-text {
 
 
-    margin-top:10px;
 
-    font-size:19px;
 
-    line-height:1.5;
 
-}
+</div>
 
 
 
@@ -551,275 +517,31 @@ header {
 
 
 
-/* CANVAS */
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-.canvas-wrapper {
 
 
-    width:100%;
 
 
-    aspect-ratio:1;
+<script src="firebase.js"></script>
 
+<script src="api.js"></script>
 
-    background:white;
+<script src="room.js"></script>
 
+<script src="canvas.js"></script>
 
-    border-radius:28px;
+<script src="ai-drawer.js"></script>
 
+<script src="game.js"></script>
 
-    overflow:hidden;
+<script src="ui.js"></script>
 
 
-    box-shadow:
 
-    0 20px 50px rgba(0,0,0,.5);
+</body>
 
 
-    touch-action:none;
-
-
-}
-
-
-
-
-
-#draw-canvas {
-
-
-    width:100%;
-
-    height:100%;
-
-    display:block;
-
-}
-
-
-
-
-
-
-
-
-
-/* TOOLS */
-
-
-.tools {
-
-
-    display:flex;
-
-    gap:12px;
-
-    align-items:center;
-
-
-    background:#181827;
-
-
-    padding:15px;
-
-
-    border-radius:24px;
-
-}
-
-
-
-
-
-.tools button {
-
-
-    height:50px;
-
-    min-width:55px;
-
-    border-radius:16px;
-
-    background:#27273d;
-
-    color:white;
-
-}
-
-
-
-
-
-#finish-draw-btn {
-
-
-    flex:1;
-
-    background:#10b981;
-
-}
-
-
-
-
-
-#clear-btn {
-
-
-    background:#ef4444;
-
-}
-
-
-
-
-
-input[type="color"] {
-
-
-    width:45px;
-
-    height:45px;
-
-    padding:0;
-
-}
-
-
-
-
-
-
-
-input[type="range"] {
-
-
-    flex:1;
-
-}
-
-
-
-
-
-
-
-
-
-/* VOTE */
-
-
-.images-container {
-
-
-    display:flex;
-
-
-    flex-direction:column;
-
-
-    gap:18px;
-
-}
-
-
-
-
-
-.vote-card {
-
-
-    background:#181827;
-
-
-    border-radius:25px;
-
-
-    padding:15px;
-
-
-    border:
-
-    1px solid #34344d;
-
-
-}
-
-
-
-
-
-.vote-card img {
-
-
-    width:100%;
-
-
-    border-radius:20px;
-
-
-}
-
-
-
-
-
-
-
-
-
-/* RESULT */
-
-
-.result-card {
-
-
-    background:#181827;
-
-
-    border-radius:25px;
-
-
-    padding:25px;
-
-
-    text-align:center;
-
-
-    line-height:1.7;
-
-}
-
-
-
-
-
-
-
-
-
-@media(max-width:420px){
-
-
-
-#app {
-
-
-    min-height:650px;
-
-    padding:18px;
-
-}
-
-
-
-h1 {
-
-
-    font-size:40px;
-
-}
-
-
-}
+</html>
