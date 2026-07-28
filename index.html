@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Not a Human - Draw</title>
+<title>Am I AI</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -30,27 +30,31 @@ START
 
 
 <h1>
-Not a Human
+Am I AI?
 </h1>
 
 
 <p class="subtitle">
+
 Нарисуй как человек.<br>
-Или обмани всех, что ты человек.
+И попробуй обмануть искусственный интеллект.
+
 </p>
 
 
 
 
 
-<div class="card">
+<div class="panel">
 
 
-<button 
-class="btn"
+<button
+
+class="main-btn"
+
 id="create-room-btn">
 
-🎨 Создать комнату
+🎨 Создать игру
 
 </button>
 
@@ -63,7 +67,7 @@ id="create-room-btn">
 
 
 
-<div class="card">
+<div class="panel">
 
 
 <input
@@ -79,11 +83,11 @@ maxlength="6"
 
 <button
 
-class="btn secondary"
+class="second-btn"
 
 id="join-room-btn">
 
-🔗 Войти
+🔗 Подключиться
 
 </button>
 
@@ -107,33 +111,40 @@ LOBBY
 ========================= -->
 
 
-<section 
+<section
+
 id="lobby-screen"
+
 class="hidden">
 
 
+
 <h2>
+
 Комната
+
 </h2>
 
 
 
-<div class="experiment-box">
 
 
-<strong id="room-display">
+<div class="room-card">
+
+
+<span>
+
+Код игры
+
+</span>
+
+
+<strong
+
+id="room-display">
 
 </strong>
 
-
-</div>
-
-
-
-
-
-<div id="created-room"
-class="room-code">
 
 
 </div>
@@ -146,7 +157,7 @@ class="room-code">
 <div class="waiting">
 
 
-⏳ Ожидание игрока...
+⏳ Ждём второго игрока...
 
 </div>
 
@@ -155,15 +166,17 @@ class="room-code">
 
 
 
+
 <button
 
-class="btn secondary"
+class="second-btn"
 
 id="leave-room-btn">
 
-🚪 Выйти из комнаты
+🚪 Выйти
 
 </button>
+
 
 
 
@@ -190,27 +203,59 @@ class="hidden">
 
 
 
-<h2>
-Нарисуй это:
-</h2>
+
+
+<header>
+
+
+<span>
+
+Раунд рисования
+
+</span>
+
+
+
+<span id="timer">
+
+60
+
+</span>
+
+
+</header>
 
 
 
 
 
-<div
-
-class="task-card">
 
 
-<p id="task-text">
 
-Загрузка задания...
+<div class="task-card">
+
+
+<h3>
+
+Твоё задание:
+
+</h3>
+
+
+<p
+
+id="task-text">
+
+Создание задания...
 
 </p>
 
 
+
 </div>
+
+
+
 
 
 
@@ -222,11 +267,11 @@ class="task-card">
 
 <canvas
 
-id="drawing-canvas"
+id="draw-canvas"
 
-width="350"
+width="500"
 
-height="350">
+height="500">
 
 </canvas>
 
@@ -239,31 +284,54 @@ height="350">
 
 
 
-<div class="draw-buttons">
+
+
+<div class="tools">
+
+
+<input
+
+type="color"
+
+id="color-picker"
+
+value="#111111"
+
+>
+
+
+
+<input
+
+type="range"
+
+id="size-picker"
+
+min="2"
+
+max="20"
+
+value="5"
+
+>
 
 
 
 <button
 
-class="btn secondary"
+id="clear-btn">
 
-id="clear-canvas-btn">
-
-🗑 Очистить
+🗑
 
 </button>
 
 
 
-
-
 <button
 
-class="btn"
+id="finish-draw-btn">
 
-id="send-drawing-btn">
-
-✅ Готово
+Готово
 
 </button>
 
@@ -275,16 +343,6 @@ id="send-drawing-btn">
 
 
 
-
-<div
-
-id="draw-status"
-
-class="waiting hidden">
-
-Ожидаем второго игрока...
-
-</div>
 
 
 
@@ -310,6 +368,7 @@ id="wait-screen"
 class="hidden">
 
 
+
 <h2>
 
 Готово!
@@ -318,11 +377,14 @@ class="hidden">
 
 
 
+
 <div class="waiting">
 
-Ждём второго игрока...
+
+🤖 ИИ рисует свой вариант...
 
 </div>
+
 
 
 </section>
@@ -356,11 +418,16 @@ class="hidden">
 
 
 
-<p class="hint">
 
-Выберите рисунок ИИ
+
+<p class="subtitle">
+
+Один рисунок сделал ИИ.<br>
+Два сделали люди.
 
 </p>
+
+
 
 
 
@@ -374,6 +441,9 @@ id="images-container"
 class="images-container">
 
 </div>
+
+
+
 
 
 
@@ -409,6 +479,9 @@ class="hidden">
 
 
 
+
+
+
 <div
 
 class="result-card"
@@ -422,15 +495,18 @@ id="result-text">
 
 
 
+
+
 <button
 
-class="btn"
+class="main-btn"
 
 onclick="location.reload()">
 
-Новый эксперимент
+Новая игра
 
 </button>
+
 
 
 
@@ -465,7 +541,9 @@ onclick="location.reload()">
 
 
 
-<!-- FILES -->
+
+
+<!-- GAME FILES -->
 
 
 <script src="firebase.js"></script>
@@ -476,6 +554,8 @@ onclick="location.reload()">
 
 <script src="canvas.js"></script>
 
+<script src="ai-drawer.js"></script>
+
 <script src="game.js"></script>
 
 <script src="ui.js"></script>
@@ -483,5 +563,6 @@ onclick="location.reload()">
 
 
 </body>
+
 
 </html>
