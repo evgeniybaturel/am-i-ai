@@ -600,6 +600,7 @@ h1 {
     cursor: pointer;
     transition: var(--transition);
     aspect-ratio: 1;
+    position: relative;
 }
 
 .vote-card:hover {
@@ -628,6 +629,7 @@ h1 {
     border-radius: 8px;
     font-size: 12px;
     color: white;
+    white-space: nowrap;
 }
 
 .vote-confirm {
