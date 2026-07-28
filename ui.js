@@ -1,6 +1,6 @@
 // ============================================================
 // UI CONTROLLER
-// NOT A HUMAN: DRAW
+// AM I AI
 // Screen manager
 // ============================================================
 
@@ -12,7 +12,6 @@
 
 
 function showScreen(id){
-
 
 
     document
@@ -36,11 +35,8 @@ function showScreen(id){
 
 
 
-
-
     const screen =
-    document
-    .getElementById(
+    document.getElementById(
         id
     );
 
@@ -240,10 +236,10 @@ function updateRoomCode(code){
 
 
     const el =
-    document
-    .getElementById(
+    document.getElementById(
         "room-display"
     );
+
 
 
 
@@ -291,9 +287,11 @@ function startTimer(){
 
 
     if(timerInterval)
+
         clearInterval(
             timerInterval
         );
+
 
 
 
@@ -305,8 +303,7 @@ function startTimer(){
 
 
     const timer =
-    document
-    .getElementById(
+    document.getElementById(
         "timer"
     );
 
@@ -348,6 +345,7 @@ function startTimer(){
 
 
 
+
         if(timerValue<=0){
 
 
@@ -357,9 +355,7 @@ function startTimer(){
             );
 
 
-
         }
-
 
 
 
@@ -401,6 +397,83 @@ function stopTimer(){
 
 
 // ============================================================
+// DRAW STATUS
+// ============================================================
+
+
+function showDrawStatus(text){
+
+
+
+    const el =
+    document.getElementById(
+        "draw-status"
+    );
+
+
+
+    if(el){
+
+
+        el.textContent =
+        text;
+
+
+        el.classList
+        .remove(
+            "hidden"
+        );
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+function hideDrawStatus(){
+
+
+
+    const el =
+    document.getElementById(
+        "draw-status"
+    );
+
+
+
+    if(el){
+
+
+        el.classList
+        .add(
+            "hidden"
+        );
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
 // INIT
 // ============================================================
 
@@ -411,11 +484,9 @@ document
 ()=>{
 
 
-
     console.log(
-        "🎨 UI initialized"
+        "🎨 Am I AI UI initialized"
     );
-
 
 
 });
@@ -429,5 +500,5 @@ document
 
 
 console.log(
-"🖥️ UI controller loaded"
+"🖥️ Am I AI UI controller loaded"
 );
