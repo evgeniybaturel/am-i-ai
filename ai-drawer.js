@@ -65,7 +65,7 @@ async function startAIDrawing(task) {
     updateProgress(100);
 
     // Сохраняем в Firebase
-    if (currentRoomId) {
+    if (typeof currentRoomId !== 'undefined' && currentRoomId) {
         await database.ref('rooms/' + currentRoomId + '/game/drawings/ai').set({
             image: image,
             finished: true,
