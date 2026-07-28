@@ -1,13 +1,11 @@
 // ============================================================
 // GAME ENGINE
 // AM I AI
-// Multiplayer drawing experiment
+// Multiplayer drawing experiment FIXED
 // ============================================================
 
 
 let gameListenerStarted = false;
-
-let aiStarted = false;
 
 let myVote = false;
 
@@ -35,14 +33,12 @@ async function startGame(){
 
 
 
-
     const ref =
     database.ref(
         "rooms/" +
         currentRoomId +
         "/game"
     );
-
 
 
 
@@ -68,7 +64,6 @@ async function startGame(){
 
 
 
-
     if(game){
 
 
@@ -86,11 +81,7 @@ async function startGame(){
 
 
 
-
-
-    if(
-        myRole !== "player1"
-    )
+    if(myRole !== "player1")
         return;
 
 
@@ -102,7 +93,6 @@ async function startGame(){
 
     const task =
     await generateTask();
-
 
 
 
@@ -125,6 +115,7 @@ async function startGame(){
 
         finished:false
 
+
     });
 
 
@@ -135,7 +126,6 @@ async function startGame(){
 
 
     listenGame();
-
 
 
 
@@ -160,8 +150,6 @@ function listenGame(){
 
     if(gameListenerStarted)
         return;
-
-
 
 
 
@@ -193,10 +181,8 @@ function listenGame(){
 
 
 
-
         if(!game)
             return;
-
 
 
 
@@ -209,13 +195,13 @@ function listenGame(){
         ){
 
 
+
             openDrawScreen(
                 game.task
             );
 
 
         }
-
 
 
 
@@ -238,11 +224,10 @@ function listenGame(){
 
 
 
-            startAI(game);
+            startAI();
 
 
         }
-
 
 
 
@@ -279,9 +264,9 @@ function listenGame(){
 
 
 
-
         if(
-            game.finished
+            game.finished &&
+            game.finalVotes
         ){
 
 
@@ -310,7 +295,7 @@ function listenGame(){
 
 
 // ============================================================
-// OPEN DRAW SCREEN
+// DRAW SCREEN
 // ============================================================
 
 
@@ -321,7 +306,6 @@ function openDrawScreen(task){
     showScreen(
         "draw-screen"
     );
-
 
 
 
@@ -345,6 +329,27 @@ function openDrawScreen(task){
 
 
 
+
+
+
+
+
+    setTimeout(()=>{
+
+
+        if(
+            typeof initCanvas==="function"
+        ){
+
+            initCanvas();
+
+        }
+
+
+    },100);
+
+
+
 }
 
 
@@ -356,11 +361,11 @@ function openDrawScreen(task){
 
 
 // ============================================================
-// START AI
+// AI START
 // ============================================================
 
 
-async function startAI(game){
+async function startAI(){
 
 
 
@@ -377,7 +382,7 @@ async function startAI(game){
 
 
 
-    const snapshot =
+    const snap =
     await ref.once(
         "value"
     );
@@ -387,9 +392,9 @@ async function startAI(game){
 
 
 
-    const current =
-    snapshot.val();
 
+    const game =
+    snap.val();
 
 
 
@@ -398,10 +403,10 @@ async function startAI(game){
 
 
     if(
-        current.aiStarted
+        !game ||
+        game.aiStarted
     )
         return;
-
 
 
 
@@ -448,20 +453,33 @@ function openVoting(drawings){
 
 
 
+    const screen =
+    document.getElementById(
+        "vote-screen"
+    );
+
+
+
+
+
     if(
-        document
-        .getElementById(
-            "vote-screen"
-        )
-        &&
-        !document
-        .getElementById(
-            "vote-screen"
-        )
-        .classList
-        .contains(
+        screen &&
+        !screen.classList.contains(
             "hidden"
         )
+    )
+        return;
+
+
+
+
+
+
+
+    if(
+        !drawings.player1.image ||
+        !drawings.player2.image ||
+        !drawings.ai.image
     )
         return;
 
@@ -481,13 +499,18 @@ function openVoting(drawings){
 
 
 
-
-
     const container =
     document.getElementById(
         "images-container"
     );
 
+
+
+
+
+
+    if(!container)
+        return;
 
 
 
@@ -503,29 +526,28 @@ function openVoting(drawings){
 
 
 
+    const cards=[
 
-    const cards = [
 
         {
             id:"player1",
-            image:
-            drawings.player1.image
+            image:drawings.player1.image
         },
+
 
         {
             id:"player2",
-            image:
-            drawings.player2.image
+            image:drawings.player2.image
         },
+
 
         {
             id:"ai",
-            image:
-            drawings.ai.image
+            image:drawings.ai.image
         }
 
-    ];
 
+    ];
 
 
 
@@ -547,8 +569,11 @@ function openVoting(drawings){
 
 
 
+
+
         card.className =
         "vote-card";
+
 
 
 
@@ -562,16 +587,11 @@ function openVoting(drawings){
 
 
 
+
+
+
         img.src =
         item.image;
-
-
-
-
-
-
-        img.style.width =
-        "100%";
 
 
 
@@ -581,6 +601,7 @@ function openVoting(drawings){
         card.appendChild(
             img
         );
+
 
 
 
@@ -634,9 +655,7 @@ async function vote(id,card){
 
 
 
-
     myVote=true;
-
 
 
 
@@ -668,9 +687,11 @@ async function vote(id,card){
 
 
 
+    if(card)
 
-    card.style.opacity =
-    "0.5";
+        card.style.opacity =
+        "0.5";
+
 
 
 
@@ -723,6 +744,7 @@ function checkVotes(){
 
 
 
+
         if(
 
             votes &&
@@ -732,11 +754,9 @@ function checkVotes(){
         ){
 
 
-
             finishGame(
                 votes
             );
-
 
 
         }
@@ -758,7 +778,7 @@ function checkVotes(){
 
 
 // ============================================================
-// FINISH GAME
+// FINISH
 // ============================================================
 
 
@@ -779,7 +799,7 @@ async function finishGame(votes){
 
 
 
-    const snapshot =
+    const snap =
     await ref.once(
         "value"
     );
@@ -789,9 +809,8 @@ async function finishGame(votes){
 
 
 
-
     const game =
-    snapshot.val();
+    snap.val();
 
 
 
@@ -811,14 +830,13 @@ async function finishGame(votes){
 
 
 
-
     await ref.update({
 
         finished:true,
 
-        finalVotes:votes,
+        status:"finished",
 
-        status:"finished"
+        finalVotes:votes
 
 
     });
@@ -847,7 +865,6 @@ function showResultScreen(game){
     showScreen(
         "result-screen"
     );
-
 
 
 
@@ -885,8 +902,6 @@ function showResultScreen(game){
 
 
 
-
-
     text +=
 
     "Игрок 1 выбрал: " +
@@ -894,8 +909,6 @@ function showResultScreen(game){
     game.finalVotes.player1.answer +
 
     "\n\n";
-
-
 
 
 
@@ -914,8 +927,6 @@ function showResultScreen(game){
 
 
 
-
-
     if(
 
         game.finalVotes.player1.answer==="ai" ||
@@ -924,21 +935,15 @@ function showResultScreen(game){
 
     ){
 
-
         text +=
-
-        "\n\n🤖 Кто-то заметил ИИ!";
-
+        "\n\n🤖 ИИ раскрыт!";
 
     }
-
     else{
 
 
         text +=
-
-        "\n\n🤯 ИИ удалось обмануть игроков!";
-
+        "\n\n🎭 ИИ смог обмануть людей!";
 
     }
 
@@ -951,6 +956,27 @@ function showResultScreen(game){
     el.textContent =
     text;
 
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// RESET
+// ============================================================
+
+
+function resetGameState(){
+
+
+    myVote=false;
 
 
 }
@@ -989,5 +1015,5 @@ function shuffle(array){
 
 
 console.log(
-"🎮 Am I AI game engine loaded"
+"🎮 Am I AI game FIXED loaded"
 );
