@@ -8,7 +8,7 @@
 // его автоматически). Сгенерируйте новый токен на huggingface.co/settings/tokens
 // и подставьте сюда. Для продакшена ключ лучше не хранить в клиентском коде
 // вообще, а прятать за небольшим серверным прокси.
-const HF_API_KEY = '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';
+const HF_API_KEY = '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';
 
 let hfClient = null;
 
