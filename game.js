@@ -1,288 +1,150 @@
 // ============================================================
-// GAME ENGINE v2.0
-// Детектив на прогулке
+// GAME ENGINE
+// NOT A HUMAN: DRAW
+// Multiplayer drawing game
 // ============================================================
 
 
-// ============================================================
-// СОСТОЯНИЕ ИГРЫ
-// ============================================================
 
+let currentGameListener = false;
 
-window.state = {
+let gameStarted = false;
 
-    version:2,
+let drawingStarted = false;
 
-    mode:"detective",
-
-    isGenerating:false,
-
-    isFinished:false,
-
-
-    case:null,
-
-
-    danetki:null,
-
-
-    clues:[],
-
-
-    messages:[],
-
-
-    progress:{
-
-        score:0,
-
-        discovered:0,
-
-        total:0
-
-    }
-
-};
+let currentTask = "";
 
 
 
 
-// ============================================================
-// ПОЛУЧЕНИЕ РЕЖИМА
-// ============================================================
-
-
-function getSelectedMode(){
-
-    const btn =
-        document.querySelector(
-            ".mode-btn.active"
-        );
-
-
-    return btn ?
-        btn.dataset.mode :
-        "detective";
-
-}
 
 
 
 
 
 // ============================================================
-// СТАРТ ИГРЫ
+// START GAME
 // ============================================================
 
 
-async function initGame(){
+async function startGame(){
 
 
-    const key =
-        getApiKey();
 
-
-    if(!key){
-
-        alert(
-            "Введите API-ключ Groq"
-        );
-
+    if(!currentRoomId)
         return;
 
-    }
 
 
 
-    const mode =
-        getSelectedMode();
 
 
-
-    resetState(mode);
-
-
-
-    showGameScreen();
-
-
-
-    setLoading(true);
-
-
-
-    addSystemMessage(
-        mode==="detective"
-        ?
-        "🕵️ Создаём дело..."
-        :
-        "❓ Создаём загадку..."
+    const ref =
+    database.ref(
+        "rooms/" +
+        currentRoomId +
+        "/game"
     );
 
 
 
-    try{
-
-
-        if(mode==="detective"){
-
-
-            const data =
-                await generateDetectiveCase();
 
 
 
-            state.case = data;
+
+    const snapshot =
+    await ref.once(
+        "value"
+    );
 
 
 
-            state.progress.total =
-                data.clues.length;
 
 
 
-            document.getElementById(
-                "case-title"
-            ).textContent =
-                data.title;
+    const game =
+    snapshot.val();
 
 
 
-            addMessage(
-                "ai",
-                data.intro
-            );
 
 
 
-        }
-
-
-        else{
-
-
-            const data =
-                await generateDanetka();
 
 
 
-            state.danetki=data;
+    if(game){
 
 
-
-            document.getElementById(
-                "case-title"
-            ).textContent =
-                "Данетка";
+        listenGame();
 
 
-            addMessage(
-                "ai",
-                data.text
-            );
-
-        }
-
-
-
-        removeLastSystemMessage();
-
-
-
-        updateUI(
-            "игра началась",
-            "#34d399"
-        );
-
-
-        saveState();
-
-
-    }
-
-    catch(e){
-
-
-        console.error(e);
-
-
-        addSystemMessage(
-            "❌ "+e.message
-        );
+        return;
 
 
     }
 
 
-    finally{
-
-
-        setLoading(false);
-
-
-    }
-
-
-}
 
 
 
 
 
 
+    // создаёт только первый игрок
 
-// ============================================================
-// СБРОС
-// ============================================================
-
-
-function resetState(mode){
+    if(myRole !== "player1")
+        return;
 
 
-    window.state={
 
 
-        version:2,
 
 
-        mode,
 
 
-        isGenerating:false,
+    const task =
+    await generateTask();
 
 
-        isFinished:false,
 
 
-        case:null,
 
 
-        danetki:null,
+    await ref.set({
+
+        task:task,
 
 
-        clues:[],
+        status:
+        "drawing",
 
 
-        messages:[],
+        drawings:{},
 
 
-        progress:{
-
-            score:0,
-
-            discovered:0,
-
-            total:0
-
-        }
+        votes:{},
 
 
-    };
+        aiStarted:false,
 
 
-    document.getElementById(
-        "chat-messages"
-    ).innerHTML="";
+        finished:false
+
+
+    });
+
+
+
+
+
+
+
+
+    listenGame();
+
+
+
 
 
 }
@@ -294,698 +156,456 @@ function resetState(mode){
 
 
 
+
 // ============================================================
-// ОТПРАВКА СООБЩЕНИЯ
+// LISTEN GAME
 // ============================================================
 
 
-async function sendMessage(){
+function listenGame(){
+
+
+
+    if(currentGameListener)
+        return;
+
+
+
+    currentGameListener=true;
+
+
+
+
+
+
+
+    database
+    .ref(
+        "rooms/" +
+        currentRoomId +
+        "/game"
+    )
+    .on(
+    "value",
+    snapshot=>{
+
+
+
+
+
+        const game =
+        snapshot.val();
+
+
+
+
+
+
+
+        if(!game)
+            return;
+
+
+
+
+
+
+
+
+        if(
+            game.status==="drawing"
+        ){
+
+
+
+            openDrawScreen(
+                game.task
+            );
+
+
+
+        }
+
+
+
+
+
+
+
+        // оба человека закончили
+
+        if(
+
+            game.drawings &&
+
+            game.drawings.player1 &&
+
+            game.drawings.player2 &&
+
+            !game.aiStarted
+
+        ){
+
+
+
+            startAI(game);
+
+
+
+        }
+
+
+
+
+
+
+
+
+        // все рисунки готовы
+
+        if(
+
+            game.drawings &&
+
+            game.drawings.player1 &&
+
+            game.drawings.player2 &&
+
+            game.drawings.ai
+
+        ){
+
+
+
+            openVoting(
+                game.drawings
+            );
+
+
+
+        }
+
+
+
+
+
+
+
+
+
+        if(
+            game.finished
+        ){
+
+
+            showResultScreen(
+                game
+            );
+
+
+        }
+
+
+
+
+
+
+
+    });
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// OPEN DRAW
+// ============================================================
+
+
+function openDrawScreen(task){
+
+
+
+    showScreen(
+        "draw-screen"
+    );
+
+
+
+
+    const text =
+    document
+    .getElementById(
+        "task-text"
+    );
+
+
+
+
+
+    if(text)
+
+        text.textContent =
+        task;
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// AI START
+// ============================================================
+
+
+async function startAI(game){
+
+
+
+    const ref =
+    database.ref(
+        "rooms/" +
+        currentRoomId +
+        "/game"
+    );
+
+
+
+
+
+
+
+    const snap =
+    await ref.once(
+        "value"
+    );
+
+
+
+
+
+
+    const current =
+    snap.val();
+
+
+
+
+
 
 
     if(
-        state.isGenerating ||
-        state.isFinished
+        current.aiStarted
     )
         return;
 
 
 
-    const input =
-        document.getElementById(
-            "chat-input"
-        );
 
 
 
-    const text =
-        input.value.trim();
 
 
+    await ref.update({
 
-    if(!text)
-        return;
+        aiStarted:true
 
+    });
 
 
-    input.value="";
 
 
 
-    addMessageInstant(
-        "user",
-        text
-    );
 
 
 
-    state.isGenerating=true;
-
-
-    setLoading(true);
-
-
-    showThinking(true);
-
-
-
-    try{
-
-
-        let result;
-
-
-
-        if(
-            state.mode==="detective"
-        ){
-
-
-            result =
-            await askDetective(
-
-                state.case,
-
-                state.messages,
-
-                text
-
-            );
-
-
-        }
-
-        else{
-
-
-            result =
-            await askDanetki(
-
-                state.danetki,
-
-                text
-
-            );
-
-
-        }
-
-
-
-
-        processAnswer(result);
-
-
-
-        saveState();
-
-
-
-    }
-
-    catch(e){
-
-
-        addSystemMessage(
-            "❌ "+e.message
-        );
-
-
-    }
-
-
-    finally{
-
-
-        state.isGenerating=false;
-
-
-        setLoading(false);
-
-
-        showThinking(false);
-
-
-
-    }
-
-
-}
-
-
-
-
-
-
-// ============================================================
-// ОБРАБОТКА ОТВЕТА AI
-// ============================================================
-
-
-function processAnswer(result){
-
-
-
-    if(
-        !result ||
-        !result.text
-    ){
-
-        return;
-
-    }
-
-
-
-    addMessage(
-        "ai",
-        result.text
+    await startAIDrawing(
+        game.task
     );
 
 
 
 
 
-    // --------------------
-    // ДЕТЕКТИВ
-    // --------------------
-
-
-    if(
-        state.mode==="detective"
-    ){
-
-
-        if(
-            result.newClue
-        ){
-
-
-            const exists =
-            state.clues.includes(
-                result.newClue
-            );
-
-
-
-            if(!exists){
-
-
-                state.clues.push(
-                    result.newClue
-                );
-
-
-                state.progress.discovered++;
-
-
-                updateCluesUI();
-
-            }
-
-
-        }
-
-
-
-        if(result.progress){
-
-            state.progress.score =
-                result.progress;
-
-        }
-
-
-    }
-
-
-
-
-
-
-    // --------------------
-    // ДАНЕТКИ
-    // --------------------
-
-
-    else{
-
-
-        if(
-            result.answer==="solved"
-        ){
-
-
-            finishStory();
-
-
-        }
-
-
-    }
-
-
-
 }
-// ============================================================
-// GAME ENGINE v2.0
-// ЧАСТЬ 2/2
-// ============================================================
+
+
+
+
+
+
 
 
 
 // ============================================================
-// ФИНАЛ
+// VOTING
 // ============================================================
 
 
-async function finishStory(){
-
-
-    if(state.isFinished)
-        return;
-
-
-    state.isFinished=true;
-
-
-    updateUI(
-        "завершение",
-        "#f59e0b"
-    );
-
-
-    setLoading(true);
+function openVoting(drawings){
 
 
 
-    addSystemMessage(
-        "📝 Подводим итоги..."
+    showScreen(
+        "vote-screen"
     );
 
 
 
-    try{
 
 
-        let finalText;
-
-
-
-        if(state.mode==="detective"){
-
-
-            finalText =
-            await generateFinal(
-
-                state.case,
-
-                state.messages,
-
-                state.clues
-
-            );
-
-
-        }
-
-        else{
-
-
-            finalText =
-            `
-Разгадка:
-
-${state.danetki.solution}
-            `;
-
-
-        }
-
-
-
-        removeLastSystemMessage();
-
-
-
-        document.getElementById(
-            "final-title"
-        ).textContent =
-        state.mode==="detective"
-        ?
-        "🕵️ Дело раскрыто"
-        :
-        "❓ Загадка разгадана";
-
-
-
-        document.getElementById(
-            "final-story"
-        ).textContent =
-            finalText;
-
-
-
-        document.getElementById(
-            "final-steps"
-        ).textContent =
-            state.messages.length;
-
-
-
-        document.getElementById(
-            "final-clues"
-        ).textContent =
-            state.clues.length;
-
-
-
-        showFinalScreen();
-
-
-
-        saveState();
-
-
-
-    }
-
-    catch(e){
-
-
-        console.error(e);
-
-
-        document.getElementById(
-            "final-title"
-        ).textContent="Ошибка";
-
-
-        document.getElementById(
-            "final-story"
-        ).textContent=e.message;
-
-
-        showFinalScreen();
-
-
-    }
-
-
-    finally{
-
-
-        setLoading(false);
-
-
-    }
-
-
-}
-
-
-
-
-
-
-// ============================================================
-// ПОДСКАЗКА
-// ============================================================
-
-
-async function giveHint(){
-
-
-    if(state.isGenerating)
-        return;
-
-
-    if(state.mode==="danetki"){
-
-
-        addSystemMessage(
-            "💡 Подумайте о деталях ситуации"
-        );
-
-
-        return;
-
-    }
-
-
-
-    if(!state.case)
-        return;
-
-
-
-    const remaining =
-        state.case.clues
-        .filter(
-            x=>!state.clues.includes(x)
-        );
-
-
-
-    if(remaining.length){
-
-
-        addMessage(
-            "ai",
-            "💡 Возможно, стоит обратить внимание: "
-            +
-            remaining[
-                Math.floor(
-                    Math.random()*remaining.length
-                )
-            ]
-        );
-
-
-    }
-
-    else{
-
-
-        addMessage(
-            "ai",
-            "💡 Вы уже нашли все основные улики. Попробуйте восстановить последовательность событий."
-        );
-
-
-    }
-
-
-}
-
-
-
-
-
-
-
-// ============================================================
-// СОХРАНЕНИЕ
-// ============================================================
-
-
-function saveState(){
-
-
-    try{
-
-
-        localStorage.setItem(
-
-            "detective_game_v2",
-
-            JSON.stringify(state)
-
-        );
-
-
-        const btn =
-        document.getElementById(
-            "load-btn"
-        );
-
-
-        if(btn)
-            btn.style.display="block";
-
-
-    }
-
-    catch(e){
-
-        console.error(
-            "Ошибка сохранения",
-            e
-        );
-
-    }
-
-
-}
-
-
-
-
-
-
-
-// ============================================================
-// ЗАГРУЗКА
-// ============================================================
-
-
-function loadState(){
-
-
-    try{
-
-
-        const raw =
-        localStorage.getItem(
-            "detective_game_v2"
-        );
-
-
-
-        if(!raw)
-            return false;
-
-
-
-        const data =
-        JSON.parse(raw);
-
-
-
-        if(data.version!==2)
-            return false;
-
-
-
-        window.state=data;
-
-
-
-        document.getElementById(
-            "chat-messages"
-        ).innerHTML="";
-
-
-
-        state.messages.forEach(m=>{
-
-
-            addMessageInstant(
-                m.type,
-                m.text
-            );
-
-
-        });
-
-
-
-
-        if(state.case){
-
-
-            document.getElementById(
-                "case-title"
-            ).textContent =
-            state.case.title;
-
-
-        }
-
-
-
-        updateCluesUI();
-
-
-
-        showGameScreen();
-
-
-
-        return true;
-
-
-    }
-
-    catch(e){
-
-
-        return false;
-
-
-    }
-
-
-}
-
-
-
-
-
-
-
-// ============================================================
-// ВЫХОД
-// ============================================================
-
-
-function exitToMain(){
-
-
-    saveState();
-
-
-    showStartScreen();
-
-
-}
-
-
-
-
-
-
-
-
-// ============================================================
-// UI ОБНОВЛЕНИЕ УЛИК
-// ============================================================
-
-
-function updateCluesUI(){
-
-
-    const count =
-    document.getElementById(
-        "clue-count"
-    );
-
-
-    const total =
-    document.getElementById(
-        "clue-total"
+    const container =
+    document
+    .getElementById(
+        "images-container"
     );
 
 
 
-    if(count)
-        count.textContent =
-        state.clues.length;
 
 
 
-    if(total)
-        total.textContent =
-        state.progress.total || "?";
+    container.innerHTML="";
+
+
+
+
+
+
+
+    const list = [
+
+        {
+            id:"player1",
+            image:drawings.player1.image
+        },
+
+
+        {
+            id:"player2",
+            image:drawings.player2.image
+        },
+
+
+        {
+            id:"ai",
+            image:drawings.ai.image
+        }
+
+
+    ];
+
+
+
+
+
+
+
+
+    shuffle(
+        list
+    )
+    .forEach(
+    item=>{
+
+
+
+
+
+
+        const card =
+        document.createElement(
+            "div"
+        );
+
+
+
+
+        card.className =
+        "vote-card";
+
+
+
+
+
+
+
+
+        const img =
+        document.createElement(
+            "img"
+        );
+
+
+
+        img.src =
+        item.image;
+
+
+
+
+
+
+        img.width =
+        250;
+
+
+
+
+
+
+
+        card.appendChild(
+            img
+        );
+
+
+
+
+
+
+
+
+        card.onclick =
+        ()=>vote(
+            item.id
+        );
+
+
+
+
+
+
+
+
+        container.appendChild(
+            card
+        );
+
+
+
+
+
+
+
+    });
 
 
 
@@ -997,37 +617,188 @@ function updateCluesUI(){
 
 
 
+
+
 // ============================================================
-// СОБЫТИЯ
+// VOTE
 // ============================================================
 
 
-document.addEventListener(
-"DOMContentLoaded",
-()=>{
+async function vote(id){
+
+
+
+
+
+    await database
+    .ref(
+        "rooms/" +
+        currentRoomId +
+        "/game/votes/" +
+        myRole
+    )
+    .set({
+
+        answer:id,
+
+        time:
+        Date.now()
+
+    });
+
+
+
+
+
+
 
 
     document
-    .querySelectorAll(".mode-btn")
-    .forEach(btn=>{
+    .getElementById(
+        "images-container"
+    )
+    .innerHTML =
+
+    "Голос отправлен. Ждём второго игрока...";
 
 
-        btn.addEventListener(
-        "click",
-        ()=>{
 
 
-            document
-            .querySelectorAll(".mode-btn")
-            .forEach(
-                b=>b.classList.remove("active")
+
+
+
+    checkVotes();
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// CHECK VOTES
+// ============================================================
+
+
+function checkVotes(){
+
+
+
+    database
+    .ref(
+        "rooms/" +
+        currentRoomId +
+        "/game/votes"
+    )
+    .on(
+    "value",
+    snapshot=>{
+
+
+
+        const votes =
+        snapshot.val();
+
+
+
+
+
+        if(
+            votes &&
+            votes.player1 &&
+            votes.player2
+        ){
+
+
+
+            finishGame(
+                votes
             );
 
 
-            btn.classList.add("active");
+        }
 
 
-        });
+
+    });
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// FINISH
+// ============================================================
+
+
+async function finishGame(votes){
+
+
+
+    const ref =
+    database.ref(
+        "rooms/" +
+        currentRoomId +
+        "/game"
+    );
+
+
+
+
+
+
+
+    const snapshot =
+    await ref.once(
+        "value"
+    );
+
+
+
+
+
+
+
+    const game =
+    snapshot.val();
+
+
+
+
+
+
+
+    if(
+        game.finished
+    )
+        return;
+
+
+
+
+
+
+
+
+    await ref.update({
+
+        finished:true,
+
+        finalVotes:votes
 
 
     });
@@ -1036,124 +807,95 @@ document.addEventListener(
 
 
 
-    document
-    .getElementById("start-btn")
-    .addEventListener(
-        "click",
-        initGame
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// RESULT
+// ============================================================
+
+
+function showResultScreen(game){
+
+
+
+    showScreen(
+        "result-screen"
     );
 
 
 
 
 
+    const el =
     document
-    .getElementById("send-btn")
-    .addEventListener(
-        "click",
-        sendMessage
+    .getElementById(
+        "result-text"
     );
 
 
 
 
 
-    document
-    .getElementById("chat-input")
-    .addEventListener(
-        "keydown",
-        e=>{
+    if(el){
 
-            if(e.key==="Enter")
-                sendMessage();
 
-        }
+        el.textContent =
+
+        "Игроки выбрали:\n\n" +
+
+        "Игрок 1: " +
+
+        game.finalVotes.player1.answer +
+
+        "\n\n" +
+
+        "Игрок 2: " +
+
+        game.finalVotes.player2.answer;
+
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// UTILS
+// ============================================================
+
+
+function shuffle(arr){
+
+
+    return arr
+    .slice()
+    .sort(
+        ()=>Math.random()-0.5
     );
 
 
+}
 
 
 
-    document
-    .getElementById("hint-btn")
-    .addEventListener(
-        "click",
-        giveHint
-    );
-
-
-
-
-
-    document
-    .getElementById("exit-btn")
-    .addEventListener(
-        "click",
-        exitToMain
-    );
-
-
-
-
-
-    document
-    .getElementById("restart-btn")
-    .addEventListener(
-        "click",
-        showStartScreen
-    );
-
-
-
-
-
-    document
-    .getElementById("load-btn")
-    .addEventListener(
-        "click",
-        ()=>{
-
-            if(!loadState())
-                alert(
-                    "Нет сохранённой игры"
-                );
-
-        }
-    );
-
-
-
-
-
-    document
-    .getElementById("copy-btn")
-    .addEventListener(
-    "click",
-    async()=>{
-
-
-        const text =
-        document.getElementById(
-            "final-title"
-        ).textContent
-        +
-        "\n\n"
-        +
-        document.getElementById(
-            "final-story"
-        ).textContent;
-
-
-
-        await navigator.clipboard
-        .writeText(text);
-
-
-
-    });
-
-
-});
 
 
 
@@ -1161,5 +903,5 @@ document.addEventListener(
 
 
 console.log(
-"🕵️ Game Engine v2.0 loaded"
+"🎮 Draw game engine loaded"
 );
