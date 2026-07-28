@@ -1,9 +1,8 @@
 // ============================================================
 // ROOM SYSTEM
 // NOT A HUMAN: DRAW
-// Multiplayer rooms
+// Persistent multiplayer rooms
 // ============================================================
-
 
 
 let currentRoomId = null;
@@ -13,8 +12,6 @@ let myPlayerId = null;
 let myRole = null;
 
 let roomListenerStarted = false;
-
-let heartbeat = null;
 
 
 
@@ -29,18 +26,19 @@ let heartbeat = null;
 // ============================================================
 
 
-function getPlayerId(){
+function createPlayerId(){
 
 
     let id =
     localStorage.getItem(
-        "nahDrawPlayer"
+        "notHumanDrawPlayerId"
     );
 
 
 
     if(id)
         return id;
+
 
 
 
@@ -53,10 +51,14 @@ function getPlayerId(){
 
 
 
+
+
     localStorage.setItem(
-        "nahDrawPlayer",
+        "notHumanDrawPlayerId",
         id
     );
+
+
 
 
 
@@ -78,22 +80,19 @@ function getPlayerId(){
 // ============================================================
 
 
-function generateCode(){
+function generateRoomCode(){
 
 
     const chars =
     "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 
-    let code="";
+
+    let code = "";
 
 
 
-    for(
-        let i=0;
-        i<6;
-        i++
-    ){
+    for(let i=0;i<6;i++){
 
 
         code +=
@@ -130,8 +129,9 @@ function generateCode(){
 async function createRoom(){
 
 
+
     myPlayerId =
-    getPlayerId();
+    createPlayerId();
 
 
 
@@ -140,25 +140,26 @@ async function createRoom(){
 
 
 
-    const code =
-    generateCode();
-
 
 
     currentRoomId =
-    code;
+    generateRoomCode();
+
+
+
 
 
 
 
     localStorage.setItem(
-        "nahDrawRoom",
-        code
+        "notHumanDrawRoom",
+        currentRoomId
     );
 
 
+
     localStorage.setItem(
-        "nahDrawRole",
+        "notHumanDrawRole",
         myRole
     );
 
@@ -171,16 +172,13 @@ async function createRoom(){
 
     await database
     .ref(
-        "rooms/" + code
+        "rooms/" +
+        currentRoomId
     )
     .set({
 
         created:
         Date.now(),
-
-
-        status:
-        "waiting",
 
 
         player1:{
@@ -199,31 +197,8 @@ async function createRoom(){
         player2:null,
 
 
-        game:null
-
-
-    });
-
-
-
-
-
-
-
-
-    database
-    .ref(
-        "rooms/" +
-        code +
-        "/player1"
-    )
-    .onDisconnect()
-    .update({
-
-        online:false,
-
-        lastSeen:
-        Date.now()
+        status:
+        "waiting"
 
     });
 
@@ -233,13 +208,22 @@ async function createRoom(){
 
 
 
-    showCreatedRoom(code);
 
-    showLobby();
+    setupDisconnect();
+
+
+
+    showCreatedRoom(
+        currentRoomId
+    );
+
+
+
+    openLobby();
+
+
 
     listenRoom();
-
-    startHeartbeat();
 
 
 
@@ -263,10 +247,11 @@ async function joinRoom(){
 
 
     const input =
-    document
-    .getElementById(
+    document.getElementById(
         "room-input"
     );
+
+
 
 
 
@@ -279,10 +264,19 @@ async function joinRoom(){
 
 
 
-    if(!code)
-        return alert(
+
+    if(!code){
+
+        alert(
             "Введите код комнаты"
         );
+
+        return;
+
+    }
+
+
+
 
 
 
@@ -291,8 +285,10 @@ async function joinRoom(){
 
     const ref =
     database.ref(
-        "rooms/" + code
+        "rooms/" +
+        code
     );
+
 
 
 
@@ -302,6 +298,8 @@ async function joinRoom(){
     await ref.once(
         "value"
     );
+
+
 
 
 
@@ -317,9 +315,8 @@ async function joinRoom(){
 
         return;
 
+
     }
-
-
 
 
 
@@ -333,9 +330,10 @@ async function joinRoom(){
 
 
 
-    myPlayerId =
-    getPlayerId();
 
+
+    myPlayerId =
+    createPlayerId();
 
 
 
@@ -355,6 +353,7 @@ async function joinRoom(){
 
     }
 
+
     else if(
         room.player2 &&
         room.player2.id === myPlayerId
@@ -367,18 +366,18 @@ async function joinRoom(){
 
     }
 
+
     else{
 
 
 
         if(
-            room.player2 &&
-            room.player2.online
+            room.player2
         ){
 
 
             alert(
-                "Комната занята"
+                "Комната уже заполнена"
             );
 
 
@@ -400,7 +399,6 @@ async function joinRoom(){
 
 
 
-
         await ref
         .child(
             "player2"
@@ -410,7 +408,9 @@ async function joinRoom(){
             id:
             myPlayerId,
 
+
             online:true,
+
 
             lastSeen:
             Date.now()
@@ -435,15 +435,16 @@ async function joinRoom(){
 
 
 
+
     localStorage.setItem(
-        "nahDrawRoom",
+        "notHumanDrawRoom",
         code
     );
 
 
 
     localStorage.setItem(
-        "nahDrawRole",
+        "notHumanDrawRole",
         myRole
     );
 
@@ -467,188 +468,18 @@ async function joinRoom(){
 
 
 
-
-    ref
-    .child(
-        myRole
-    )
-    .onDisconnect()
-    .update({
-
-        online:false,
-
-        lastSeen:
-        Date.now()
-
-    });
+    setupDisconnect();
 
 
 
 
 
 
-    showLobby();
+    openLobby();
+
+
 
     listenRoom();
-
-    startHeartbeat();
-
-
-
-}
-
-
-
-
-
-
-
-
-
-// ============================================================
-// HEARTBEAT
-// ============================================================
-
-
-function startHeartbeat(){
-
-
-
-    if(heartbeat)
-        clearInterval(
-            heartbeat
-        );
-
-
-
-    heartbeat =
-    setInterval(()=>{
-
-
-
-        if(
-            !currentRoomId ||
-            !myRole
-        )
-            return;
-
-
-
-
-        database
-        .ref(
-            "rooms/" +
-            currentRoomId +
-            "/" +
-            myRole
-        )
-        .update({
-
-            online:true,
-
-            lastSeen:
-            Date.now()
-
-        });
-
-
-
-    },10000);
-
-
-
-}
-
-
-
-
-
-
-
-
-
-// ============================================================
-// LISTEN ROOM
-// ============================================================
-
-
-function listenRoom(){
-
-
-    if(roomListenerStarted)
-        return;
-
-
-
-    roomListenerStarted=true;
-
-
-
-
-
-    database
-    .ref(
-        "rooms/" +
-        currentRoomId
-    )
-    .on(
-    "value",
-    snapshot=>{
-
-
-        const room =
-        snapshot.val();
-
-
-
-
-        if(!room)
-            return;
-
-
-
-
-
-
-
-        if(
-            room.player1 &&
-            room.player2
-        ){
-
-
-
-            const text =
-            document
-            .querySelector(
-                ".waiting"
-            );
-
-
-            if(text)
-
-            text.textContent =
-            "✅ Игрок найден. Начинаем...";
-
-
-
-
-
-            setTimeout(()=>{
-
-
-                startGame();
-
-
-            },800);
-
-
-
-        }
-
-
-
-    });
 
 
 
@@ -671,22 +502,25 @@ async function restoreRoom(){
 
 
 
-    const room =
+    const roomId =
     localStorage.getItem(
-        "nahDrawRoom"
+        "notHumanDrawRoom"
     );
 
 
 
     const role =
     localStorage.getItem(
-        "nahDrawRole"
+        "notHumanDrawRole"
     );
 
 
 
+
+
+
     if(
-        !room ||
+        !roomId ||
         !role
     )
         return;
@@ -701,7 +535,8 @@ async function restoreRoom(){
     const snapshot =
     await database
     .ref(
-        "rooms/" + room
+        "rooms/" +
+        roomId
     )
     .once(
         "value"
@@ -713,8 +548,17 @@ async function restoreRoom(){
 
 
 
-    if(!snapshot.exists())
+
+    if(!snapshot.exists()){
+
+
+        clearRoomStorage();
+
+
         return;
+
+
+    }
 
 
 
@@ -723,7 +567,7 @@ async function restoreRoom(){
 
 
     currentRoomId =
-    room;
+    roomId;
 
 
 
@@ -733,7 +577,8 @@ async function restoreRoom(){
 
 
     myPlayerId =
-    getPlayerId();
+    createPlayerId();
+
 
 
 
@@ -743,7 +588,7 @@ async function restoreRoom(){
     await database
     .ref(
         "rooms/" +
-        room +
+        roomId +
         "/" +
         role
     )
@@ -761,11 +606,186 @@ async function restoreRoom(){
 
 
 
-    showLobby();
+
+
+    openLobby();
+
+
+
+    showCreatedRoom(
+        roomId
+    );
+
+
 
     listenRoom();
 
-    startHeartbeat();
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// ROOM LISTENER
+// ============================================================
+
+
+function listenRoom(){
+
+
+
+    if(roomListenerStarted)
+        return;
+
+
+
+    roomListenerStarted=true;
+
+
+
+
+
+
+
+    database
+    .ref(
+        "rooms/" +
+        currentRoomId
+    )
+    .on(
+    "value",
+    snapshot=>{
+
+
+
+        const room =
+        snapshot.val();
+
+
+
+
+
+        if(!room)
+            return;
+
+
+
+
+
+
+
+        if(
+            room.player1 &&
+            room.player2
+        ){
+
+
+
+            showRoomReady();
+
+
+
+            if(
+                typeof startGame === "function"
+            ){
+
+
+                startGame();
+
+
+            }
+
+
+
+        }
+
+
+
+
+
+
+        else{
+
+
+            const wait =
+            document.querySelector(
+                ".waiting"
+            );
+
+
+
+            if(wait)
+
+
+                wait.textContent =
+                "⏳ Ожидание второго игрока...";
+
+
+
+        }
+
+
+
+
+
+
+    });
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// DISCONNECT
+// ============================================================
+
+
+function setupDisconnect(){
+
+
+
+    if(
+        !currentRoomId ||
+        !myRole
+    )
+        return;
+
+
+
+
+
+
+    database
+    .ref(
+        "rooms/" +
+        currentRoomId +
+        "/" +
+        myRole
+    )
+    .onDisconnect()
+    .update({
+
+        online:false,
+
+        lastSeen:
+        Date.now()
+
+    });
 
 
 
@@ -789,19 +809,70 @@ async function leaveRoom(){
 
 
     if(
-        currentRoomId &&
+        !currentRoomId ||
+        !myRole
+    )
+        return;
+
+
+
+
+
+
+
+
+    const roomRef =
+    database.ref(
+        "rooms/" +
+        currentRoomId
+    );
+
+
+
+
+
+
+    await roomRef
+    .child(
         myRole
+    )
+    .remove();
+
+
+
+
+
+
+
+    const snapshot =
+    await roomRef.once(
+        "value"
+    );
+
+
+
+
+
+
+
+    const room =
+    snapshot.val();
+
+
+
+
+
+
+
+    if(
+        room &&
+        !room.player1 &&
+        !room.player2
     ){
 
 
-        await database
-        .ref(
-            "rooms/" +
-            currentRoomId +
-            "/" +
-            myRole
-        )
-        .remove();
+
+        await roomRef.remove();
 
 
 
@@ -811,14 +882,24 @@ async function leaveRoom(){
 
 
 
-    localStorage.removeItem(
-        "nahDrawRoom"
-    );
 
 
-    localStorage.removeItem(
-        "nahDrawRole"
-    );
+    clearRoomStorage();
+
+
+
+
+
+
+    currentRoomId=null;
+
+    myRole=null;
+
+    roomListenerStarted=false;
+
+
+
+
 
 
 
@@ -837,25 +918,23 @@ async function leaveRoom(){
 
 
 // ============================================================
-// UI
+// HELPERS
 // ============================================================
 
 
-function showCreatedRoom(code){
+function clearRoomStorage(){
 
 
-    const el =
-    document
-    .getElementById(
-        "room-display"
+
+    localStorage.removeItem(
+        "notHumanDrawRoom"
     );
 
 
 
-    if(el)
-
-        el.textContent =
-        code;
+    localStorage.removeItem(
+        "notHumanDrawRole"
+    );
 
 
 }
@@ -868,33 +947,51 @@ function showCreatedRoom(code){
 
 
 
-function showLobby(){
-
-
-    document
-    .querySelectorAll(
-        "section"
-    )
-    .forEach(s=>{
-
-        s.classList.add(
-            "hidden"
-        );
-
-    });
+function showCreatedRoom(code){
 
 
 
-
-
-    document
-    .getElementById(
-        "lobby-screen"
-    )
-    .classList
-    .remove(
-        "hidden"
+    const el =
+    document.getElementById(
+        "created-room"
     );
+
+
+
+    if(el)
+
+
+        el.textContent =
+        "Код: " + code;
+
+
+
+}
+
+
+
+
+
+
+
+
+
+function showRoomReady(){
+
+
+
+    const wait =
+    document.querySelector(
+        ".waiting"
+    );
+
+
+
+    if(wait)
+
+
+        wait.textContent =
+        "✅ Игрок подключился. Начинаем рисование...";
 
 
 
@@ -919,34 +1016,49 @@ document
 ()=>{
 
 
-
-document
-.getElementById(
-"create-room-btn"
-)
-?.addEventListener(
-"click",
-createRoom
-);
-
-
-
-
-
-document
-.getElementById(
-"join-room-btn"
-)
-?.addEventListener(
-"click",
-joinRoom
-);
+    document
+    .getElementById(
+        "create-room-btn"
+    )
+    ?.addEventListener(
+        "click",
+        createRoom
+    );
 
 
 
 
 
-restoreRoom();
+    document
+    .getElementById(
+        "join-room-btn"
+    )
+    ?.addEventListener(
+        "click",
+        joinRoom
+    );
+
+
+
+
+
+
+    document
+    .getElementById(
+        "leave-room-btn"
+    )
+    ?.addEventListener(
+        "click",
+        leaveRoom
+    );
+
+
+
+
+
+
+
+    restoreRoom();
 
 
 
@@ -961,5 +1073,5 @@ restoreRoom();
 
 
 console.log(
-"🏠 Room system loaded"
+"🏠 Room system persistent loaded"
 );
