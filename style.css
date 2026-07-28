@@ -1,532 +1,960 @@
+/* ============================================================
+   NOT A HUMAN: DRAW
+   Dark AI experiment interface
+============================================================ */
+
+
 * {
+
     margin:0;
     padding:0;
     box-sizing:border-box;
+
 }
 
+
+
 body {
-    font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;
-    background:#0a0a0f;
-    color:#e0e0e0;
+
+
     min-height:100vh;
+
+
+    background:
+
+    radial-gradient(
+        circle at top,
+        #25204a,
+        #080811 70%
+    );
+
+
+    font-family:
+
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+
+
+    color:#f5f5ff;
+
+
     display:flex;
+
+
     justify-content:center;
+
+
     align-items:center;
-    padding:16px;
-    touch-action:manipulation;
+
+
+    padding:15px;
+
+
 }
+
+
+
+
+
 
 
 #app {
+
+
     width:100%;
+
+
     max-width:480px;
-    min-height:min(700px,100vh);
-    background:#14141e;
-    border-radius:28px;
-    padding:24px 20px 32px;
-    border:1px solid rgba(255,255,255,.04);
-    display:flex;
-    flex-direction:column;
+
+
+    min-height:720px;
+
+
+
+    background:
+
+    rgba(15,15,28,.95);
+
+
+
+    border:
+
+    1px solid rgba(255,255,255,.08);
+
+
+
+    border-radius:30px;
+
+
+
+    padding:25px;
+
+
+
+    box-shadow:
+
+    0 30px 80px rgba(0,0,0,.6);
+
+
+
+    overflow:hidden;
+
+
 }
+
+
+
+
+
+
+
 
 
 .hidden {
-    display:none!important;
+
+    display:none !important;
+
 }
 
 
-/* =====================
-   START
-===================== */
 
 
-#start-screen {
-    flex:1;
+
+
+
+
+
+section {
+
+
     display:flex;
+
+
     flex-direction:column;
-    justify-content:center;
-    align-items:center;
+
+
+    gap:22px;
+
+
+    animation:
+
+    appear .35s ease;
+
+
+}
+
+
+
+
+
+@keyframes appear {
+
+
+from {
+
+    opacity:0;
+
+    transform:translateY(15px);
+
+}
+
+
+to {
+
+    opacity:1;
+
+    transform:translateY(0);
+
+}
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   START SCREEN
+============================================================ */
+
+
+
+.logo {
+
+
     text-align:center;
-    gap:20px;
-}
 
 
-#start-screen h1 {
-    font-size:38px;
+    font-size:28px;
+
+
     font-weight:700;
-    color:#f0f0f5;
+
+
+    letter-spacing:1px;
+
+
 }
 
 
-#start-screen h1:after {
-    content:'';
-    display:block;
-    width:40px;
-    height:3px;
-    margin:8px auto;
-    background:linear-gradient(135deg,#a78bfa,#60a5fa);
-    border-radius:5px;
+
+.logo span {
+
+
+    color:#8b5cf6;
+
 }
 
 
-.sub {
-    color:#8888aa;
-    line-height:1.5;
+
+
+h1 {
+
+
+    text-align:center;
+
+
+    font-size:55px;
+
+
+    letter-spacing:5px;
+
+
+    background:
+
+    linear-gradient(
+        135deg,
+        #a78bfa,
+        #38bdf8
+    );
+
+
+    -webkit-background-clip:text;
+
+
+    color:transparent;
+
+
 }
 
 
-.input-group {
-    width:100%;
+
+
+
+h2 {
+
+
+    font-size:26px;
+
+
+}
+
+
+
+
+
+.subtitle {
+
+
+    text-align:center;
+
+
+    color:#9ca3af;
+
+
+    font-size:17px;
+
+
+}
+
+
+
+
+
+.description {
+
+
+    text-align:center;
+
+
+    line-height:1.6;
+
+
+    color:#b5b5cc;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   PANELS
+============================================================ */
+
+
+.panel {
+
+
+    background:
+
+    rgba(255,255,255,.04);
+
+
+
+    border:
+
+    1px solid rgba(255,255,255,.08);
+
+
+
+    border-radius:22px;
+
+
+
+    padding:18px;
+
+
+
     display:flex;
+
+
     flex-direction:column;
-    gap:8px;
+
+
+    gap:15px;
+
+
 }
 
 
-.input-group input,
-#chat-input {
 
-    background:#1e1e2e;
-    border:1px solid #2a2a40;
-    border-radius:14px;
-    padding:14px;
+
+
+
+
+
+
+input {
+
+
+    width:100%;
+
+
+    padding:16px;
+
+
+    border-radius:16px;
+
+
+    border:
+
+    1px solid #34344d;
+
+
+
+    background:#10101c;
+
+
     color:white;
-    font-size:16px;
+
+
+    font-size:17px;
+
+
     outline:none;
 
+
 }
 
 
-.input-group small {
-    color:#555577;
+
+input:focus {
+
+
+    border-color:#8b5cf6;
+
+
 }
 
 
-/* =====================
- BUTTONS
-===================== */
 
 
-.btn {
-    width:100%;
-    padding:16px;
+
+
+
+
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+
+
+
+button {
+
+
     border:none;
-    border-radius:16px;
-    background:linear-gradient(135deg,#7c5cfc,#5b3fd4);
-    color:white;
-    font-size:18px;
+
+
+    cursor:pointer;
+
+
+    font-size:17px;
+
+
     font-weight:600;
-}
 
 
-.btn-secondary {
-    background:#1e1e2e;
-    color:#aaaacc;
-}
+    transition:.2s;
 
-
-.btn-success {
-    background:linear-gradient(135deg,#34d399,#059669);
-}
-
-
-
-.mode-selector {
-    display:flex;
-    gap:12px;
-    width:100%;
-}
-
-
-.mode-btn {
-
-    flex:1;
-    padding:14px;
-    background:#1a1a28;
-    border:2px solid #2a2a40;
-    color:#8888bb;
-    border-radius:14px;
-
-}
-
-
-.mode-btn.active {
-
-    border-color:#7c5cfc;
-    color:white;
-    background:rgba(124,92,252,.12);
 
 }
 
 
 
-/* =====================
- GAME HEADER
-===================== */
+button:active {
 
 
-#game-screen {
+    transform:scale(.95);
 
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-
-}
-
-
-.chat-header {
-
-    display:flex;
-    align-items:center;
-    gap:10px;
-    border-bottom:1px solid #1e1e2e;
-    padding-bottom:10px;
-
-}
-
-
-.exit-btn {
-
-    background:none;
-    border:none;
-    color:#777;
-    font-size:18px;
-
-}
-
-
-.chat-status {
-
-    margin-right:auto;
-    font-size:13px;
-    color:#34d399;
 
 }
 
 
 
-.hint-btn,
-.inventory-toggle {
 
-    width:36px;
-    height:36px;
-    border-radius:50%;
-    border:1px solid #2a2a40;
-    background:#1a1a28;
-    color:#ddd;
-    font-size:18px;
-
-}
+.main-btn {
 
 
-
-/* =====================
- CASE PANEL
-===================== */
+    padding:17px;
 
 
-.case-panel {
-
-    background:#1a1a28;
-    border-radius:14px;
-    padding:12px 16px;
-    border:1px solid #2a2a40;
-
-}
-
-
-.case-title {
-
-    color:#f0f0f5;
-    font-weight:600;
-    margin-bottom:6px;
-
-}
-
-
-.case-progress {
-
-    font-size:13px;
-    color:#8888bb;
-
-}
-
-
-.case-progress strong {
-
-    color:#34d399;
-
-}
-
-
-
-/* =====================
- CHAT
-===================== */
-
-
-.chat-messages {
-
-    flex:1;
-    overflow-y:auto;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-    padding:10px 0;
-
-}
-
-
-
-.message {
-
-    max-width:88%;
-    padding:12px 16px;
     border-radius:18px;
-    line-height:1.5;
-    white-space:pre-wrap;
-
-}
 
 
-
-.message-ai {
-
-    background:#1e1e2e;
-    border:1px solid #2a2a40;
-    align-self:flex-start;
-
-}
-
-
-.message-user {
-
-    background:linear-gradient(135deg,#7c5cfc,#5b3fd4);
-    align-self:flex-end;
-
-}
-
-
-.message-system {
-
-    background:#1a1a28;
-    color:#8888bb;
-    align-self:center;
-    border-radius:20px;
-    padding:8px 15px;
-    font-size:14px;
-
-}
-
-
-
-/* =====================
- THINKING
-===================== */
-
-
-.thinking {
-
-    text-align:center;
-    color:#8888bb;
-    font-size:14px;
-}
-
-
-.thinking span:after {
-
-    content:'...';
-    animation:dots 1.2s infinite;
-
-}
-
-
-@keyframes dots {
-
-    0% {content:'';}
-    33% {content:'.';}
-    66% {content:'..';}
-    100% {content:'...';}
-
-}
-
-
-
-/* =====================
- INPUT
-===================== */
-
-
-.chat-input-area {
-
-    display:flex;
-    gap:8px;
-    border-top:1px solid #1e1e2e;
-    padding-top:10px;
-
-}
-
-
-#chat-input {
-
-    flex:1;
-
-}
-
-
-.send-btn {
-
-    width:50px;
-    border:none;
-    border-radius:14px;
-    background:#7c5cfc;
     color:white;
-    font-size:22px;
+
+
+    background:
+
+    linear-gradient(
+        135deg,
+        #8b5cf6,
+        #6366f1
+    );
+
 
 }
 
 
 
-/* =====================
- INVENTORY
-===================== */
 
 
-.modal {
-
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.7);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:20px;
-
-}
+.second-btn {
 
 
-.modal-content {
-
-    width:100%;
-    max-width:400px;
-    background:#14141e;
-    border-radius:20px;
-
-}
-
-
-.modal-header {
-
-    display:flex;
-    justify-content:space-between;
     padding:16px;
 
-}
+
+    border-radius:18px;
 
 
-.modal-body {
-
-    padding:20px;
-
-}
+    background:#25253a;
 
 
-.clue-item {
-
-    background:#1a1a28;
-    border-left:3px solid #7c5cfc;
-    border-radius:12px;
-    padding:12px;
-    margin-bottom:10px;
-
-}
+    color:white;
 
 
-.clue-title {
+    border:
 
-    font-weight:600;
-}
+    1px solid #3b3b55;
 
-
-.clue-meta {
-
-    font-size:12px;
-    color:#777;
 
 }
 
 
 
-/* =====================
- FINAL
-===================== */
 
 
-#final-screen {
-
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-
-}
 
 
-#final-story {
-
-    background:#1a1a28;
-    border-radius:16px;
-    padding:18px;
-    line-height:1.6;
-    overflow:auto;
-
-}
 
 
-.stats {
-
-    display:flex;
-    gap:10px;
-
-}
+/* ============================================================
+   ROOM
+============================================================ */
 
 
-.stat {
+.room-card {
 
-    flex:1;
+
+    background:#11111d;
+
+
+    border-radius:22px;
+
+
+    padding:25px;
+
+
     text-align:center;
-    background:#1a1a28;
-    padding:12px;
-    border-radius:12px;
+
+
+    color:#aaa;
+
 
 }
 
 
-.stat span {
+
+.room-card strong {
+
 
     display:block;
-    font-size:24px;
+
+
+    margin-top:15px;
+
+
+    font-size:42px;
+
+
+    letter-spacing:8px;
+
+
     color:#34d399;
+
 
 }
 
+
+
+.waiting {
+
+
+    text-align:center;
+
+
+    color:#9ca3af;
+
+
+    padding:20px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   DRAW SCREEN
+============================================================ */
+
+
+header {
+
+
+    display:flex;
+
+
+    justify-content:space-between;
+
+
+    color:#aaa;
+
+
+    font-size:18px;
+
+
+}
+
+
+
+#timer {
+
+
+    color:#38bdf8;
+
+
+    font-weight:bold;
+
+
+}
+
+
+
+
+
+
+.task-card {
+
+
+    background:#171725;
+
+
+    border-radius:20px;
+
+
+    padding:18px;
+
+
+    border:
+
+    1px solid #303047;
+
+
+    text-align:center;
+
+
+}
+
+
+
+
+
+#task-text {
+
+
+    font-size:18px;
+
+
+    line-height:1.5;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   CANVAS
+============================================================ */
+
+
+.canvas-wrapper {
+
+
+    width:100%;
+
+
+    aspect-ratio:1;
+
+
+    background:white;
+
+
+    border-radius:24px;
+
+
+    overflow:hidden;
+
+
+    touch-action:none;
+
+
+    box-shadow:
+
+    0 15px 40px rgba(0,0,0,.4);
+
+
+}
+
+
+
+
+#draw-canvas {
+
+
+    width:100%;
+
+
+    height:100%;
+
+
+    display:block;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   DRAW TOOLS
+============================================================ */
+
+
+.tools {
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    gap:12px;
+
+
+    background:#171725;
+
+
+    padding:15px;
+
+
+    border-radius:22px;
+
+
+}
+
+
+
+.tools button {
+
+
+    width:55px;
+
+
+    height:55px;
+
+
+    border-radius:16px;
+
+
+    background:#25253a;
+
+
+    color:white;
+
+
+    font-size:25px;
+
+
+}
+
+
+
+
+
+#finish-draw-btn {
+
+
+    background:#10b981;
+
+
+}
+
+
+
+#clear-btn {
+
+
+    background:#ef4444;
+
+
+}
+
+
+
+
+input[type="color"] {
+
+
+    width:45px;
+
+
+    height:45px;
+
+
+    padding:0;
+
+
+    border-radius:50%;
+
+
+}
+
+
+
+
+
+
+
+
+
+input[type="range"] {
+
+
+    flex:1;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   VOTE
+============================================================ */
+
+
+#images-container {
+
+
+    display:flex;
+
+
+    flex-direction:column;
+
+
+    gap:15px;
+
+
+}
+
+
+
+
+
+.vote-card {
+
+
+    background:#171725;
+
+
+    border-radius:22px;
+
+
+    padding:15px;
+
+
+    border:
+
+    1px solid #34344d;
+
+
+}
+
+
+
+
+
+.vote-card canvas {
+
+
+    width:100%;
+
+
+    border-radius:15px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   RESULT
+============================================================ */
+
+
+.result-card {
+
+
+    background:#171725;
+
+
+    border-radius:22px;
+
+
+    padding:25px;
+
+
+    line-height:1.6;
+
+
+    text-align:center;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* ============================================================
+   MOBILE
+============================================================ */
 
 
 @media(max-width:420px){
 
-    #app {
-
-        padding:16px;
-        border-radius:20px;
-
-    }
 
 
-    #start-screen h1 {
+#app {
 
-        font-size:30px;
 
-    }
+    min-height:650px;
+
+
+    padding:18px;
+
+
+}
+
+
+
+h1 {
+
+
+    font-size:45px;
+
+
+}
+
 
 }
