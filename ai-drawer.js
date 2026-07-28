@@ -19,10 +19,24 @@ async function startAIDrawing(task){
         return;
     }
 
+    // Draw into an offscreen canvas to avoid relying on visible UI canvas size
+    const off = document.createElement('canvas');
+    off.width = 500;
+    off.height = 500;
+    const offCtx = off.getContext('2d');
+    offCtx.fillStyle = '#ffffff';
+    offCtx.fillRect(0,0,off.width,off.height);
+
+    // swap globals
+    const prevCanvas = canvas;
+    const prevCtx = ctx;
     try{
+        canvas = off;
+        ctx = offCtx;
+
         await executeDrawing(drawing.actions);
 
-        const image = canvas.toDataURL("image/png");
+        const image = off.toDataURL('image/png');
 
         await database
         .ref(
@@ -41,6 +55,9 @@ async function startAIDrawing(task){
     }catch(e){
         console.error('startAIDrawing failed', e);
     }finally{
+        // restore globals
+        canvas = prevCanvas;
+        ctx = prevCtx;
         aiDrawing=false;
     }
 }

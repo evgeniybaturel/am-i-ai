@@ -22,9 +22,13 @@ let drawingFinished = false;
 function initCanvas(){
     canvas = document.getElementById("draw-canvas");
     if(!canvas) return;
-    if(canvasReady) return;
+
+    // always get context and prepare canvas size (useful when canvas was hidden before)
     ctx = canvas.getContext("2d");
     prepareCanvas();
+
+    // if listeners already attached, avoid attaching them again
+    if(canvasReady) return;
 
     canvas.addEventListener("pointerdown", startDraw);
     canvas.addEventListener("pointermove", draw);
@@ -50,9 +54,14 @@ function initCanvas(){
     // handle resize
     window.addEventListener('resize', debounce(()=>{
         // preserve current drawing image
-        const data = canvas.toDataURL();
-        prepareCanvas();
-        drawImageOnCanvas(data);
+        try{
+            const data = canvas.toDataURL();
+            prepareCanvas();
+            drawImageOnCanvas(data);
+        }catch(e){
+            // ignore if canvas not ready
+            prepareCanvas();
+        }
     }, 200));
 
     canvasReady=true;
@@ -63,15 +72,20 @@ function initCanvas(){
 // ============================================================
 
 function prepareCanvas(){
+    if(!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const ratio = window.devicePixelRatio || 1;
 
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
+    // fallback to 500x500 if element not laid out yet
+    const w = rect.width || 500;
+    const h = rect.height || 500;
+
+    canvas.width = w * ratio;
+    canvas.height = h * ratio;
 
     ctx.setTransform(ratio,0,0,ratio,0,0);
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0,0,rect.width,rect.height);
+    ctx.fillRect(0,0,w,h);
 }
 
 // ============================================================
@@ -96,7 +110,7 @@ function startDraw(e){
     const pos = getPosition(e);
     lastX = pos.x;
     lastY = pos.y;
-    canvas.setPointerCapture(e.pointerId);
+    try{ canvas.setPointerCapture(e.pointerId); }catch(e){}
 }
 
 // ============================================================
@@ -131,10 +145,12 @@ function stopDraw(){
 // ============================================================
 
 function clearCanvas(){
-    if(!ctx) return;
+    if(!ctx || !canvas) return;
     const rect = canvas.getBoundingClientRect();
+    const w = rect.width || canvas.width;
+    const h = rect.height || canvas.height;
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0,0,rect.width,rect.height);
+    ctx.fillRect(0,0,w,h);
 }
 
 // ============================================================
@@ -149,6 +165,8 @@ async function finishDrawing(){
     if(typeof stopTimer === 'function'){
         stopTimer();
     }
+
+    if(!canvas) return;
 
     const image = canvas.toDataURL("image/png");
 
@@ -177,7 +195,7 @@ async function finishDrawing(){
 // ============================================================
 
 function drawImageOnCanvas(image){
-    if(!ctx) return;
+    if(!ctx || !canvas) return;
     const img = new Image();
     img.onload = ()=>{
         const rect = canvas.getBoundingClientRect();

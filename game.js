@@ -234,8 +234,6 @@ async function vote(id,card){
     });
 
     if(card) card.style.opacity = "0.5";
-
-    // no need to set another listener; listenGame will detect both votes and call finishGame
 }
 
 // ============================================================
@@ -293,8 +291,29 @@ function showResultScreen(game){
 
 function resetGameState(){
     myVote=false;
-    // reset other runtime flags if needed
 }
+
+// ============================================================
+// NEW GAME BUTTON HANDLER
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', ()=>{
+    document.getElementById('new-game-btn')?.addEventListener('click', async ()=>{
+        try{
+            if(!currentRoomId) return;
+            await database.ref('rooms/'+currentRoomId+'/game').remove();
+            resetGameState();
+            if(myRole==='player1'){
+                // player1 will create new game
+                startGame();
+            }else{
+                openLobby();
+            }
+        }catch(e){
+            console.error(e);
+        }
+    });
+});
 
 // ============================================================
 // UTILS
