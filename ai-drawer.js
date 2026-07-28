@@ -1,9 +1,8 @@
 // ============================================================
 // AI DRAWER ENGINE
-// NOT A HUMAN: DRAW
-// AI draws like a human using Canvas events
+// AM I AI
+// Human-like AI drawing
 // ============================================================
-
 
 
 let aiDrawing = false;
@@ -46,6 +45,7 @@ async function startAIDrawing(task){
 
 
 
+
     const drawing =
     await generateAIDrawing(
         task
@@ -59,7 +59,8 @@ async function startAIDrawing(task){
 
     if(
         !drawing ||
-        !drawing.actions
+        !drawing.actions ||
+        drawing.actions.length===0
     ){
 
 
@@ -88,6 +89,7 @@ async function startAIDrawing(task){
 
 
 
+
     const image =
     canvas.toDataURL(
         "image/png"
@@ -102,9 +104,11 @@ async function startAIDrawing(task){
 
     await database
     .ref(
+
         "rooms/" +
         currentRoomId +
         "/game/drawings/ai"
+
     )
     .set({
 
@@ -124,7 +128,10 @@ async function startAIDrawing(task){
 
 
 
+
     aiDrawing=false;
+
+
 
 
 
@@ -147,7 +154,7 @@ async function startAIDrawing(task){
 
 
 // ============================================================
-// EXECUTE COMMANDS
+// EXECUTE
 // ============================================================
 
 
@@ -155,7 +162,10 @@ async function executeDrawing(actions){
 
 
 
-    if(!ctx || !canvas)
+    if(
+        !ctx ||
+        !canvas
+    )
         return;
 
 
@@ -188,15 +198,18 @@ async function executeDrawing(actions){
 
 
 
+
     for(
         const action of actions
     ){
 
 
 
-        await sleep(
-            action.delay || 200
-        );
+
+
+        // человек иногда думает
+
+        await humanPause();
 
 
 
@@ -205,12 +218,12 @@ async function executeDrawing(actions){
 
 
         if(
-            action.type === "line"
+            action.type==="line"
         ){
 
 
 
-            drawAILine(
+            drawLine(
                 action
             );
 
@@ -225,12 +238,12 @@ async function executeDrawing(actions){
 
 
         if(
-            action.type === "circle"
+            action.type==="circle"
         ){
 
 
 
-            drawAICircle(
+            drawCircle(
                 action
             );
 
@@ -258,16 +271,56 @@ async function executeDrawing(actions){
 
 
 // ============================================================
+// HUMAN PAUSE
+// ============================================================
+
+
+function humanPause(){
+
+
+
+    const time =
+    150 +
+    Math.random()*600;
+
+
+
+
+
+    return new Promise(
+        resolve=>
+
+        setTimeout(
+            resolve,
+            time
+        )
+
+    );
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
 // LINE
 // ============================================================
 
 
-function drawAILine(action){
+function drawLine(action){
 
 
 
     const scale =
-    canvas.width / 500;
+    canvas.width /
+    500;
 
 
 
@@ -275,6 +328,7 @@ function drawAILine(action){
 
 
     ctx.beginPath();
+
 
 
 
@@ -292,6 +346,7 @@ function drawAILine(action){
 
 
 
+
     ctx.lineTo(
 
         action.x2 * scale,
@@ -304,7 +359,11 @@ function drawAILine(action){
 
 
 
+
     ctx.stroke();
+
+
+
 
 
 
@@ -323,12 +382,14 @@ function drawAILine(action){
 // ============================================================
 
 
-function drawAICircle(action){
+function drawCircle(action){
 
 
 
     const scale =
-    canvas.width / 500;
+    canvas.width /
+    500;
+
 
 
 
@@ -336,6 +397,8 @@ function drawAICircle(action){
 
 
     ctx.beginPath();
+
+
 
 
 
@@ -351,9 +414,11 @@ function drawAICircle(action){
 
         0,
 
-        Math.PI * 2
+        Math.PI*2
 
     );
+
+
 
 
 
@@ -374,21 +439,26 @@ function drawAICircle(action){
 
 
 // ============================================================
-// HUMAN LIKE DELAYS
+// RANDOM HUMAN ERROR
 // ============================================================
 
 
-function sleep(ms){
+async function humanMistake(){
 
 
 
-    return new Promise(
-        resolve =>
+    await new Promise(
+
+        resolve=>
+
         setTimeout(
             resolve,
-            ms
+            500+
+            Math.random()*1000
         )
+
     );
+
 
 
 }
@@ -413,5 +483,5 @@ startAIDrawing;
 
 
 console.log(
-"🤖 AI drawer loaded"
+"🤖 Am I AI human drawer loaded"
 );
