@@ -8,14 +8,16 @@
 // SCREEN CONTROL
 // ============================================================
 
-function showScreen(id){
-    document.querySelectorAll("section").forEach(section=>{
-        section.classList.add("hidden");
+function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(screen => {
+        screen.classList.remove("active");
+        screen.classList.add("hidden");
     });
 
     const screen = document.getElementById(id);
-    if(screen){
+    if (screen) {
         screen.classList.remove("hidden");
+        screen.classList.add("active");
     }
 }
 
@@ -23,7 +25,7 @@ function showScreen(id){
 // START
 // ============================================================
 
-function openStart(){
+function openStart() {
     showScreen("start-screen");
 }
 
@@ -31,7 +33,7 @@ function openStart(){
 // LOBBY
 // ============================================================
 
-function openLobby(){
+function openLobby() {
     showScreen("lobby-screen");
 }
 
@@ -39,29 +41,32 @@ function openLobby(){
 // DRAW
 // ============================================================
 
-function openDrawing(){
+function openDrawing() {
     showScreen("draw-screen");
 
-    setTimeout(()=>{
-        if(typeof initCanvas === "function"){
+    setTimeout(() => {
+        if (typeof initCanvas === "function") {
             initCanvas();
         }
-    },100);
+    }, 100);
 }
 
 // ============================================================
 // WAIT
 // ============================================================
 
-function openWait(){
+function openWait() {
     showScreen("wait-screen");
+    // Сбрасываем прогресс
+    const progress = document.getElementById('ai-progress');
+    if (progress) progress.style.width = '0%';
 }
 
 // ============================================================
 // VOTE
 // ============================================================
 
-function openVote(){
+function openVote() {
     showScreen("vote-screen");
 }
 
@@ -69,7 +74,7 @@ function openVote(){
 // RESULT
 // ============================================================
 
-function openResult(){
+function openResult() {
     showScreen("result-screen");
 }
 
@@ -77,9 +82,9 @@ function openResult(){
 // ROOM DISPLAY
 // ============================================================
 
-function updateRoomCode(code){
+function updateRoomCode(code) {
     const el = document.getElementById("room-display");
-    if(el) el.textContent = code;
+    if (el) el.textContent = code;
 }
 
 // ============================================================
@@ -89,28 +94,42 @@ function updateRoomCode(code){
 let timerValue = 60;
 let timerInterval = null;
 
-function startTimer(){
-    if(timerInterval) clearInterval(timerInterval);
+function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
     timerValue = 60;
     const timer = document.getElementById("timer");
-    if(timer) timer.textContent = timerValue;
+    const progress = document.getElementById("timer-progress");
+    
+    if (timer) timer.textContent = timerValue;
+    if (progress) {
+        const circumference = 2 * Math.PI * 15.9155;
+        progress.style.strokeDasharray = circumference;
+        progress.style.strokeDashoffset = 0;
+    }
 
-    timerInterval = setInterval(()=>{
+    timerInterval = setInterval(() => {
         timerValue--;
-        if(timer) timer.textContent = timerValue;
-        if(timerValue<=0){
+        if (timer) timer.textContent = timerValue;
+        
+        // Обновляем круговой прогресс
+        if (progress) {
+            const circumference = 2 * Math.PI * 15.9155;
+            const offset = circumference - (timerValue / 60) * circumference;
+            progress.style.strokeDashoffset = offset;
+        }
+        
+        if (timerValue <= 0) {
             clearInterval(timerInterval);
             timerInterval = null;
-            // auto finish drawing when time is up
-            if(typeof window.finishDrawing === 'function'){
+            if (typeof window.finishDrawing === 'function') {
                 window.finishDrawing();
             }
         }
-    },1000);
+    }, 1000);
 }
 
-function stopTimer(){
-    if(timerInterval) clearInterval(timerInterval);
+function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
     timerInterval = null;
 }
 
@@ -118,24 +137,24 @@ function stopTimer(){
 // DRAW STATUS
 // ============================================================
 
-function showDrawStatus(text){
+function showDrawStatus(text) {
     const el = document.getElementById("draw-status");
-    if(el){
+    if (el) {
         el.textContent = text;
         el.classList.remove("hidden");
     }
 }
 
-function hideDrawStatus(){
+function hideDrawStatus() {
     const el = document.getElementById("draw-status");
-    if(el) el.classList.add("hidden");
+    if (el) el.classList.add("hidden");
 }
 
 // ============================================================
 // INIT
 // ============================================================
 
-document.addEventListener("DOMContentLoaded", ()=>{
+document.addEventListener("DOMContentLoaded", () => {
     console.log("🎨 Am I AI UI initialized");
 });
 
