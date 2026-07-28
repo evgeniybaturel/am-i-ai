@@ -51,8 +51,6 @@ function initCanvas(){
 
 
 
-    if(canvasReady)
-        return;
 
 
 
@@ -63,7 +61,24 @@ function initCanvas(){
 
 
 
+
+
+
     prepareCanvas();
+
+
+
+
+
+
+    if(canvasReady)
+        return;
+
+
+
+
+
+
 
 
 
@@ -93,11 +108,11 @@ function initCanvas(){
     );
 
 
-
     canvas.addEventListener(
         "pointerleave",
         stopDraw
     );
+
 
 
 
@@ -119,6 +134,7 @@ function initCanvas(){
 
         }
     );
+
 
 
 
@@ -149,6 +165,8 @@ function initCanvas(){
 
 
 
+
+
     document
     .getElementById(
         "clear-btn"
@@ -164,6 +182,8 @@ function initCanvas(){
 
 
 
+
+
     document
     .getElementById(
         "finish-draw-btn"
@@ -172,6 +192,10 @@ function initCanvas(){
         "click",
         finishDrawing
     );
+
+
+
+
 
 
 
@@ -200,8 +224,34 @@ function prepareCanvas(){
 
 
 
+    if(!canvas || !ctx)
+        return;
+
+
+
+
+
+
+
     const rect =
     canvas.getBoundingClientRect();
+
+
+
+
+
+
+
+
+    if(
+        rect.width===0 ||
+        rect.height===0
+    )
+        return;
+
+
+
+
 
 
 
@@ -215,6 +265,8 @@ function prepareCanvas(){
 
 
 
+
+
     canvas.width =
     rect.width * ratio;
 
@@ -222,6 +274,7 @@ function prepareCanvas(){
 
     canvas.height =
     rect.height * ratio;
+
 
 
 
@@ -244,8 +297,14 @@ function prepareCanvas(){
 
 
 
+
+
     ctx.fillStyle =
     "#ffffff";
+
+
+
+
 
 
 
@@ -260,7 +319,6 @@ function prepareCanvas(){
         rect.height
 
     );
-
 
 
 
@@ -293,6 +351,7 @@ function getPosition(e){
 
 
 
+
     return {
 
 
@@ -307,6 +366,7 @@ function getPosition(e){
     };
 
 
+
 }
 
 
@@ -318,7 +378,7 @@ function getPosition(e){
 
 
 // ============================================================
-// DRAW START
+// START DRAW
 // ============================================================
 
 
@@ -331,7 +391,12 @@ function startDraw(e){
 
 
 
+
+
+
     drawing=true;
+
+
 
 
 
@@ -342,6 +407,10 @@ function startDraw(e){
 
 
 
+
+
+
+
     lastX =
     pos.x;
 
@@ -349,6 +418,9 @@ function startDraw(e){
 
     lastY =
     pos.y;
+
+
+
 
 
 
@@ -371,7 +443,7 @@ function startDraw(e){
 
 
 // ============================================================
-// DRAW MOVE
+// DRAW
 // ============================================================
 
 
@@ -384,8 +456,12 @@ function draw(e){
 
 
 
+
+
+
     const pos =
     getPosition(e);
+
 
 
 
@@ -397,6 +473,10 @@ function draw(e){
 
 
 
+
+
+
+
     ctx.moveTo(
 
         lastX,
@@ -404,6 +484,10 @@ function draw(e){
         lastY
 
     );
+
+
+
+
 
 
 
@@ -419,8 +503,13 @@ function draw(e){
 
 
 
+
+
     ctx.strokeStyle =
     currentColor;
+
+
+
 
 
 
@@ -429,8 +518,16 @@ function draw(e){
 
 
 
+
+
+
+
     ctx.lineCap =
     "round";
+
+
+
+
 
 
 
@@ -440,7 +537,11 @@ function draw(e){
 
 
 
+
+
+
     ctx.stroke();
+
 
 
 
@@ -506,6 +607,7 @@ function clearCanvas(){
 
 
 
+
     const rect =
     canvas.getBoundingClientRect();
 
@@ -514,8 +616,12 @@ function clearCanvas(){
 
 
 
+
     ctx.fillStyle =
     "#ffffff";
+
+
+
 
 
 
@@ -559,7 +665,10 @@ async function finishDrawing(){
 
 
 
+
+
     drawingFinished=true;
+
 
 
 
@@ -571,6 +680,8 @@ async function finishDrawing(){
     canvas.toDataURL(
         "image/png"
     );
+
+
 
 
 
@@ -597,6 +708,8 @@ async function finishDrawing(){
         Date.now()
 
     });
+
+
 
 
 
@@ -639,8 +752,14 @@ function drawImageOnCanvas(image){
 
 
 
+
+
     const img =
     new Image();
+
+
+
+
 
 
 
@@ -650,6 +769,8 @@ function drawImageOnCanvas(image){
 
         const rect =
         canvas.getBoundingClientRect();
+
+
 
 
 
@@ -669,7 +790,11 @@ function drawImageOnCanvas(image){
         );
 
 
+
     };
+
+
+
 
 
 
@@ -707,23 +832,6 @@ finishDrawing;
 
 window.drawImageOnCanvas =
 drawImageOnCanvas;
-
-
-
-
-
-
-
-document
-.addEventListener(
-"DOMContentLoaded",
-()=>{
-
-
-    initCanvas();
-
-
-});
 
 
 
