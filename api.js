@@ -1,10 +1,9 @@
 // ============================================================
-// API v2.0 — GROQ ENGINE
-// Детектив на прогулке
+// API ENGINE
+// NOT A HUMAN: DRAW
+// AI QUESTION + AI DRAWING CONTROL
 // ============================================================
 
-
-const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 
 // ============================================================
@@ -12,554 +11,602 @@ const GROQ_MODEL = "llama-3.3-70b-versatile";
 // ============================================================
 
 
-function getApiKey() {
-
-    const input = document.getElementById("api-key");
-
-    const key = input ? input.value.trim() : "";
-
-    if (key) {
-        localStorage.setItem(
-            "groq_api_key",
-            key
-        );
-
-        return key;
-    }
+function getApiKey(){
 
 
     return localStorage.getItem(
         "groq_api_key"
     ) || "";
 
+
 }
 
 
 
-// ============================================================
-// ОСНОВНОЙ ЗАПРОС
-// ============================================================
 
 
-async function groqRequest(system, user, temperature = 0.4) {
 
 
-    const apiKey = getApiKey();
+function saveApiKey(key){
 
 
-    if (!apiKey) {
+    if(key){
 
-        throw new Error(
-            "API ключ не найден"
+
+        localStorage.setItem(
+            "groq_api_key",
+            key
         );
 
-    }
-
-
-
-    const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-
-            method:"POST",
-
-            headers:{
-
-                "Content-Type":"application/json",
-
-                "Authorization":
-                    `Bearer ${apiKey}`
-
-            },
-
-
-            body:JSON.stringify({
-
-                model:GROQ_MODEL,
-
-
-                messages:[
-
-                    {
-                        role:"system",
-                        content:system
-                    },
-
-                    {
-                        role:"user",
-                        content:user
-                    }
-
-                ],
-
-
-                temperature,
-
-                max_tokens:700
-
-            })
-
-        }
-
-    );
-
-
-
-    if (!response.ok) {
-
-
-        const err =
-            await response.json();
-
-
-        throw new Error(
-            err.error?.message ||
-            "Ошибка Groq"
-        );
 
     }
-
-
-
-    const data =
-        await response.json();
-
-
-
-    let text =
-        data.choices[0]
-        .message
-        .content
-        .trim();
-
-
-
-    return parseJSON(text);
 
 
 }
 
 
 
+
+
+
+
+
+
 // ============================================================
-// JSON PARSER
+// GENERATE DRAW TASK
 // ============================================================
 
 
-function parseJSON(text){
+async function generateTask(){
 
 
-    try {
 
-        return JSON.parse(text);
+    const apiKey =
+    getApiKey();
+
+
+
+
+
+    if(!apiKey){
+
+
+        return randomTask();
+
 
     }
 
-    catch(e){
-
-
-        const match =
-            text.match(/\{[\s\S]*\}/);
-
-
-        if(match){
-
-            return JSON.parse(match[0]);
-
-        }
-
-
-        throw new Error(
-            "AI вернул неправильный JSON"
-        );
-
-    }
-
-}
 
 
 
-// ============================================================
-// СОЗДАНИЕ ДЕТЕКТИВНОГО ДЕЛА
-// ============================================================
-
-
-async function generateDetectiveCase(){
-
-
-const system = `
-
-Ты создаёшь дела для детективной игры.
-
-Главное правило:
-СОЗДАЙ ЛОГИЧНУЮ ИСТИНУ.
-Она никогда не должна меняться.
-
-Игрок видит только intro.
-
-Скрытая правда хранится отдельно.
-
-
-Ответ только JSON:
-
-{
-"title":"",
-"intro":"",
-"solution":"",
-"characters":[],
-"facts":[],
-"clues":[]
-}
-
-
-facts — реальные факты дела.
-
-clues — улики, которые можно найти.
-
-`;
 
 
 
-const user = `
 
-Создай новое детективное дело.
 
-Жанры:
-кража,
-исчезновение,
-тайна,
-шпионаж,
-семейный секрет.
+const prompt = `
+
+Ты создаёшь задания для игры Not a Human: Draw.
+
+Игроки должны нарисовать что-то за 60 секунд.
+
+Создай простое, но интересное задание.
 
 Требования:
 
-- минимум 3 персонажа;
-- минимум 5 фактов;
-- минимум 5 возможных улик;
-- решение должно объяснять всё;
-- никаких случайных противоречий.
+- объект или сцену можно нарисовать пальцем на телефоне;
+- не используй личные темы;
+- не используй сложные детали;
+- задание должно иметь несколько возможных вариантов.
+
+Верни только текст задания.
+
+Примеры:
+
+"Нарисуйте кота, который сидит на луне"
+
+"Нарисуйте дом своей мечты"
 
 `;
 
 
 
-return await groqRequest(
-    system,
-    user,
-    0.8
-);
-
-
-}
 
 
 
 
-// ============================================================
-// СОЗДАНИЕ ДАНЕТКИ
-// ============================================================
+try{
 
 
-async function generateDanetka(){
+const response =
+await fetch(
 
-
-const system = `
-
-Ты создаёшь логические данетки.
-
-Ситуация должна иметь ОДНУ правильную разгадку.
-
-
-Ответ JSON:
+"https://api.groq.com/openai/v1/chat/completions",
 
 {
-"text":"",
-"solution":"",
-"facts":[]
-}
 
 
-facts — список фактов,
-по которым можно отвечать
-Да / Нет / Не важно.
-
-`;
+method:"POST",
 
 
+headers:{
 
-const user = `
 
-Создай сложную, но честную данетку.
+"Content-Type":
+"application/json",
 
-Правила:
 
-- ситуация короткая;
-- решение логичное;
-- все ответы должны следовать из facts;
-- нельзя менять решение.
+"Authorization":
+`Bearer ${apiKey}`
 
-`;
+
+},
 
 
 
-return await groqRequest(
-    system,
-    user,
-    0.8
-);
+body:JSON.stringify({
+
+model:
+"llama-3.3-70b-versatile",
 
 
-}
+messages:[
 
-
-
-// ============================================================
-// ПРОВЕРКА ДЕЙСТВИЯ ДЕТЕКТИВА
-// ============================================================
-
-
-async function askDetective(caseData, history, input){
-
-
-
-const system = `
-
-Ты ведущий детективной игры.
-
-
-У тебя есть скрытая правда дела.
-
-
-Ты НЕ можешь:
-
-- менять факты;
-- придумывать новую правду;
-- отрицать найденные улики.
-
-
-Ответ JSON:
 
 {
-"text":"",
-"newClue":"",
-"progress":0
-}
 
+role:"system",
 
-Если игрок нашёл настоящую улику —
-добавь её в newClue.
+content:
+"Ты создаёшь задания для игры рисования."
 
+},
 
-`;
-
-
-
-const user = `
-
-
-Дело:
-
-${JSON.stringify(caseData)}
-
-
-
-История:
-
-${JSON.stringify(history)}
-
-
-
-Действие игрока:
-
-${input}
-
-
-
-Ответь как ведущий.
-
-
-`;
-
-
-
-return await groqRequest(
-    system,
-    user
-);
-
-
-}
-
-
-
-// ============================================================
-// ПРОВЕРКА ДАНЕТКИ
-// ============================================================
-
-
-async function askDanetki(game,input){
-
-
-const system = `
-
-Ты ведущий Данетки.
-
-
-Отвечай только по фактам.
-
-
-JSON:
 
 {
-"text":"",
-"answer":"yes|no|irrelevant|solved"
+
+role:"user",
+
+content:prompt
+
 }
 
 
-Не раскрывай решение,
-пока игрок не разгадал.
+],
 
 
-`;
+temperature:1,
 
 
-
-const user = `
-
-
-Ситуация:
-
-${game.text}
+max_tokens:50
 
 
-Факты:
-
-${JSON.stringify(game.facts)}
+})
 
 
-Решение:
+}
 
-${game.solution}
-
-
-
-Вопрос игрока:
-
-${input}
-
-
-
-`;
-
-
-
-return await groqRequest(
-    system,
-    user
 );
 
 
+
+
+
+
+const data =
+await response.json();
+
+
+
+
+
+return data
+.choices[0]
+.message
+.content
+.trim();
+
+
+
+
+
 }
+
+catch(e){
+
+
+console.error(
+"Task error",
+e
+);
+
+
+return randomTask();
+
+
+}
+
+
+
+}
+
+
+
+
+
 
 
 
 
 // ============================================================
-// ФИНАЛ
+// AI DRAW COMMANDS
 // ============================================================
 
 
-async function generateFinal(caseData, history, clues){
-
-
-const system = `
-
-Ты ведущий детективной игры.
-
-Напиши красивый финал.
-
-Не придумывай новых фактов.
-
-
-`;
+async function generateAIDrawing(task){
 
 
 
-const user = `
-
-
-Истина:
-
-${JSON.stringify(caseData)}
-
-
-Найденные улики:
-
-${JSON.stringify(clues)}
-
-
-История:
-
-${JSON.stringify(history)}
+const apiKey =
+getApiKey();
 
 
 
-Объясни:
-
-- что произошло;
-- почему;
-- что игроки нашли.
 
 
-`;
+if(!apiKey){
 
 
+return fakeDrawing();
 
-const result =
-    await groqRequest(
-        system,
-        user
-    );
-
-
-return result.text || JSON.stringify(result);
 
 }
 
 
 
-// ============================================================
 
 
-document.addEventListener(
-"DOMContentLoaded",
-()=>{
 
 
-const saved =
-localStorage.getItem(
-"groq_api_key"
+const prompt = `
+
+Ты играешь в Not a Human: Draw.
+
+Ты обычный человек рисующий пальцем на телефоне.
+
+Твоя задача — создать команды рисования.
+
+Задание:
+
+${task}
+
+
+ВАЖНО:
+
+- рисунок должен быть простым;
+- не должен выглядеть профессионально;
+- допускай небольшие ошибки;
+- линии должны быть неровными;
+- добавляй паузы и исправления.
+
+
+Верни ТОЛЬКО JSON.
+
+Формат:
+
+
+{
+"actions":[
+
+{
+"type":"line",
+"x1":100,
+"y1":100,
+"x2":150,
+"y2":120,
+"delay":300
+}
+
+]
+
+}
+
+
+Используй координаты от 0 до 500.
+
+`;
+
+
+
+
+
+
+
+try{
+
+
+const response =
+await fetch(
+
+"https://api.groq.com/openai/v1/chat/completions",
+
+{
+
+
+method:"POST",
+
+
+headers:{
+
+
+"Content-Type":
+"application/json",
+
+
+"Authorization":
+`Bearer ${apiKey}`
+
+
+},
+
+
+
+body:JSON.stringify({
+
+model:
+"llama-3.3-70b-versatile",
+
+
+messages:[
+
+
+{
+
+role:"system",
+
+content:
+"Ты создаёшь команды рисования для Canvas."
+
+},
+
+
+{
+
+role:"user",
+
+content:prompt
+
+}
+
+
+],
+
+
+
+temperature:0.8,
+
+
+max_tokens:1200
+
+
+})
+
+
+}
+
 );
 
 
-if(saved){
 
-const input =
-document.getElementById(
-"api-key"
+
+
+
+
+const data =
+await response.json();
+
+
+
+
+
+
+
+let text =
+data
+.choices[0]
+.message
+.content
+.trim();
+
+
+
+
+
+
+
+text =
+text
+.replace(
+"```json",
+""
+)
+.replace(
+"```",
+""
+)
+.trim();
+
+
+
+
+
+
+
+return JSON.parse(text);
+
+
+
+}
+
+catch(e){
+
+
+
+console.error(
+"AI drawing error",
+e
 );
 
 
-if(input)
-input.value=saved;
+
+return fakeDrawing();
+
 
 
 }
 
 
-});
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// FALLBACK DRAWING
+// ============================================================
+
+
+function fakeDrawing(){
+
+
+return {
+
+
+actions:[
+
+
+{
+
+type:"circle",
+
+x:250,
+
+y:200,
+
+radius:80,
+
+delay:300
+
+},
+
+
+{
+
+type:"line",
+
+x1:200,
+
+y1:280,
+
+x2:150,
+
+y2:350,
+
+delay:400
+
+},
+
+
+{
+
+type:"line",
+
+x1:300,
+
+y1:280,
+
+x2:350,
+
+y2:350,
+
+delay:400
+
+}
+
+
+]
+
+
+};
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// RANDOM TASKS
+// ============================================================
+
+
+function randomTask(){
+
+
+
+const tasks=[
+
+
+"Нарисуйте кота на луне",
+
+
+"Нарисуйте дом мечты",
+
+
+"Нарисуйте смешного монстра",
+
+
+"Нарисуйте дерево в необычном месте",
+
+
+"Нарисуйте робота, который пытается быть человеком"
+
+
+
+];
+
+
+
+return tasks[
+Math.floor(
+Math.random()*tasks.length
+)
+];
+
+
+
+}
+
+
+
+
+
+
+
 
 
 console.log(
-"🤖 API Engine v2.0 loaded"
+"🤖 AI drawing API loaded"
 );
