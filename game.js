@@ -1,11 +1,12 @@
 // ============================================================
 // GAME ENGINE
 // AM I AI
-// Multiplayer drawing experiment FIXED
+// Multiplayer drawing experiment
 // ============================================================
 
 let gameListenerStarted = false;
 let myVote = false;
+let selectedVoteId = null;
 
 // refs for cleanup
 let gameRef = null;
@@ -15,42 +16,28 @@ let gameCallback = null;
 // START GAME
 // ============================================================
 
-async function startGame(){
+async function startGame() {
+    if (!currentRoomId) return;
 
-    if(!currentRoomId)
-        return;
-
-    const ref =
-    database.ref(
-        "rooms/" +
-        currentRoomId +
-        "/game"
-    );
-
-    const snapshot =
-    await ref.once(
-        "value"
-    );
-
+    const ref = database.ref("rooms/" + currentRoomId + "/game");
+    const snapshot = await ref.once("value");
     const game = snapshot.val();
 
-    if(game){
+    if (game) {
         listenGame();
         return;
     }
 
-    if(myRole !== "player1")
-        return;
+    if (myRole !== "player1") return;
 
     const task = await generateTask();
-
     await ref.set({
-        task:task,
-        status:"drawing",
-        drawings:{},
-        votes:{},
-        aiStarted:false,
-        finished:false
+        task: task,
+        status: "drawing",
+        drawings: {},
+        votes: {},
+        aiStarted: false,
+        finished: false
     });
 
     listenGame();
@@ -60,62 +47,37 @@ async function startGame(){
 // LISTENER
 // ============================================================
 
-function listenGame(){
-
-    if(gameListenerStarted)
-        return;
-
-    if(!currentRoomId)
-        return;
+function listenGame() {
+    if (gameListenerStarted) return;
+    if (!currentRoomId) return;
 
     gameListenerStarted = true;
-
     gameRef = database.ref('rooms/' + currentRoomId + '/game');
 
     gameCallback = snapshot => {
         const game = snapshot.val();
-        if(!game) return;
+        if (!game) return;
 
-        if(game.status==="drawing"){
-            // prevent reopening draw screen if this player already submitted their drawing
+        if (game.status === "drawing") {
             const hasMyDrawing = game.drawings && game.drawings[myRole] && game.drawings[myRole].finished;
-            if(hasMyDrawing){
-                // show waiting state so the player cannot draw again
+            if (hasMyDrawing) {
                 openWait();
             } else {
                 openDrawScreen(game.task);
             }
         }
 
-        if(
-            game.drawings &&
-            game.drawings.player1 &&
-            game.drawings.player2 &&
-            !game.aiStarted
-        ){
-            // try to start AI atomically
+        if (game.drawings && game.drawings.player1 && game.drawings.player2 && !game.aiStarted) {
             startAI();
         }
 
-        if(
-            game.drawings &&
-            game.drawings.player1 &&
-            game.drawings.player2 &&
-            game.drawings.ai
-        ){
+        if (game.drawings && game.drawings.player1 && game.drawings.player2 && game.drawings.ai) {
             openVoting(game.drawings);
         }
 
-        // If votes collected, finish
-        if(game.finished && game.finalVotes){
+        if (game.finished && game.finalVotes) {
             showResultScreen(game);
-        } else if(
-            game.votes &&
-            game.votes.player1 &&
-            game.votes.player2 &&
-            !game.finished
-        ){
-            // both players voted -> finalize
+        } else if (game.votes && game.votes.player1 && game.votes.player2 && !game.finished) {
             finishGame(game.votes);
         }
     };
@@ -123,8 +85,8 @@ function listenGame(){
     gameRef.on('value', gameCallback);
 }
 
-function removeGameListener(){
-    if(gameRef && gameCallback){
+function removeGameListener() {
+    if (gameRef && gameCallback) {
         gameRef.off('value', gameCallback);
     }
     gameListenerStarted = false;
@@ -136,54 +98,45 @@ function removeGameListener(){
 // DRAW SCREEN
 // ============================================================
 
-function openDrawScreen(task){
-    showScreen(
-        "draw-screen"
-    );
+function openDrawScreen(task) {
+    showScreen("draw-screen");
 
     const text = document.getElementById("task-text");
-    if(text) text.textContent = task;
+    if (text) text.textContent = task;
 
-    // reset canvas state so user can draw again
-    if(typeof window.resetDrawingState === 'function'){
+    if (typeof window.resetDrawingState === 'function') {
         window.resetDrawingState();
     }
 
-    // start timer for drawing
-    if(typeof startTimer === 'function'){
+    if (typeof startTimer === 'function') {
         startTimer();
     }
 
-    setTimeout(()=>{
-        if(
-            typeof initCanvas==="function"
-        ){
+    setTimeout(() => {
+        if (typeof initCanvas === "function") {
             initCanvas();
         }
-    },100);
+    }, 100);
 }
 
 // ============================================================
 // AI START
 // ============================================================
 
-async function startAI(){
+async function startAI() {
     const ref = database.ref('rooms/' + currentRoomId + '/game');
-
     const snap = await ref.once('value');
     const game = snap.val();
-    if(!game || game.aiStarted) return;
+    if (!game || game.aiStarted) return;
 
-    // try to set aiStarted atomically
     const aiStartedRef = ref.child('aiStarted');
     const res = await aiStartedRef.transaction(current => {
-        if(current) return; // already true -> abort
+        if (current) return;
         return true;
     });
 
-    if(!res.committed) return; // someone else started AI
+    if (!res.committed) return;
 
-    // safe to start AI
     await startAIDrawing(game.task);
 }
 
@@ -191,85 +144,115 @@ async function startAI(){
 // VOTING
 // ============================================================
 
-function openVoting(drawings){
+function openVoting(drawings) {
     const screen = document.getElementById("vote-screen");
-    if(screen && !screen.classList.contains("hidden")) return;
+    if (screen && !screen.classList.contains("hidden")) return;
 
-    if(!drawings.player1.image || !drawings.player2.image || !drawings.ai.image) return;
+    if (!drawings.player1?.image || !drawings.player2?.image || !drawings.ai?.image) {
+        console.warn('Не все рисунки готовы');
+        return;
+    }
 
     showScreen("vote-screen");
 
     const container = document.getElementById("images-container");
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = "";
 
-    const cards=[
-        { id:"player1", image:drawings.player1.image },
-        { id:"player2", image:drawings.player2.image },
-        { id:"ai", image:drawings.ai.image }
+    const cards = [
+        { id: "player1", image: drawings.player1.image, label: "Игрок 1" },
+        { id: "player2", image: drawings.player2.image, label: "Игрок 2" },
+        { id: "ai", image: drawings.ai.image, label: "ИИ" }
     ];
 
-    shuffle(cards).forEach(item=>{
+    shuffle(cards);
+
+    cards.forEach(item => {
         const card = document.createElement("div");
         card.className = "vote-card";
+        card.dataset.id = item.id;
+
         const img = document.createElement("img");
-        // validate image string before assigning
-        if(item.image && typeof item.image === 'string' && item.image.length > 20 && (item.image.startsWith('data:') || item.image.startsWith('http'))){
-            img.src = item.image;
-        } else {
-            img.alt = "Изображение недоступно";
-            img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=";
-            console.warn('openVoting: invalid image for', item.id, item.image);
-        }
+        img.src = item.image;
+        img.alt = item.label;
+        img.loading = "lazy";
+
+        const label = document.createElement("div");
+        label.className = "vote-label";
+        label.textContent = item.label;
+
         card.appendChild(img);
-        card.onclick = ()=>vote(item.id, card);
+        card.appendChild(label);
+
+        card.onclick = () => selectVote(card, item.id);
         container.appendChild(card);
     });
+
+    // Скрываем подтверждение при новой загрузке
+    document.getElementById('vote-confirm')?.classList.add('hidden');
+    selectedVoteId = null;
+}
+
+function selectVote(card, id) {
+    document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedVoteId = id;
+
+    const confirmEl = document.getElementById('vote-confirm');
+    const textEl = document.getElementById('vote-selected-text');
+    if (confirmEl && textEl) {
+        const labels = {
+            'player1': 'Игрок 1',
+            'player2': 'Игрок 2',
+            'ai': 'Искусственный интеллект'
+        };
+        textEl.textContent = `Выбрано: ${labels[id] || id}`;
+        confirmEl.classList.remove('hidden');
+    }
 }
 
 // ============================================================
 // VOTE
 // ============================================================
 
-async function vote(id,card){
-    if(myVote) return;
+async function vote(id) {
+    if (myVote) return;
     myVote = true;
 
     await database
-    .ref(
-        "rooms/" +
-        currentRoomId +
-        "/game/votes/" +
-        myRole
-    )
-    .set({
-        answer:id,
-        time: Date.now()
+        .ref("rooms/" + currentRoomId + "/game/votes/" + myRole)
+        .set({
+            answer: id,
+            time: Date.now()
+        });
+
+    document.querySelectorAll('.vote-card').forEach(c => {
+        c.style.opacity = '0.5';
+        c.style.pointerEvents = 'none';
     });
 
-    if(card) card.style.opacity = "0.5";
+    document.getElementById('vote-confirm')?.classList.add('hidden');
 }
 
 // ============================================================
 // FINISH
 // ============================================================
 
-async function finishGame(votes){
+async function finishGame(votes) {
     const ref = database.ref('rooms/' + currentRoomId + '/game');
     const snap = await ref.once('value');
     const game = snap.val();
-    if(game && game.finished) return;
+    if (game && game.finished) return;
 
-    // validate votes
-    if(!votes || !votes.player1 || !votes.player2) return;
+    if (!votes || !votes.player1 || !votes.player2) return;
 
-    const allowed = new Set(['player1','player2','ai']);
-    if(!allowed.has(votes.player1.answer) || !allowed.has(votes.player2.answer)) return;
+    const allowed = new Set(['player1', 'player2', 'ai']);
+    if (!allowed.has(votes.player1.answer) || !allowed.has(votes.player2.answer)) return;
 
     await ref.update({
-        finished:true,
-        status:"finished",
-        finalVotes:votes
+        finished: true,
+        status: "finished",
+        finalVotes: votes
     });
 }
 
@@ -277,59 +260,81 @@ async function finishGame(votes){
 // RESULT
 // ============================================================
 
-function showResultScreen(game){
+function showResultScreen(game) {
     showScreen("result-screen");
 
     const el = document.getElementById("result-text");
-    if(!el) return;
+    const icon = document.getElementById("result-icon");
+    const title = document.getElementById("result-title");
+    
+    if (!el) return;
 
-    let text = "Эксперимент завершён\n\n";
-    text += "Игрок 1 выбрал: " + (game.finalVotes?.player1?.answer || 'n/a') + "\n\n";
-    text += "Игрок 2 выбрал: " + (game.finalVotes?.player2?.answer || 'n/a');
+    const p1Vote = game.finalVotes?.player1?.answer || 'n/a';
+    const p2Vote = game.finalVotes?.player2?.answer || 'n/a';
 
-    if(
-        game.finalVotes?.player1?.answer === "ai" ||
-        game.finalVotes?.player2?.answer === "ai"
-    ){
-        text += "\n\n🤖 ИИ раскрыт!";
+    let text = "<p><strong>Результаты голосования:</strong></p>";
+    text += `<p>👤 Игрок 1 выбрал: <span class="highlight">${p1Vote === 'ai' ? '🤖 ИИ' : p1Vote === 'player1' ? '👤 Игрок 1' : '👤 Игрок 2'}</span></p>`;
+    text += `<p>👤 Игрок 2 выбрал: <span class="highlight">${p2Vote === 'ai' ? '🤖 ИИ' : p2Vote === 'player1' ? '👤 Игрок 1' : '👤 Игрок 2'}</span></p>`;
+
+    if (p1Vote === 'ai' || p2Vote === 'ai') {
+        text += `<p>🎉 <strong>ИИ раскрыт!</strong> Игроки оказались проницательными!</p>`;
+        if (icon) icon.textContent = '🎉';
+        if (title) title.textContent = 'ИИ раскрыт!';
     } else {
-        text += "\n\n🎭 ИИ смог обмануть людей!";
+        text += `<p>🎭 <strong>ИИ смог обмануть людей!</strong> Машина победила!</p>`;
+        if (icon) icon.textContent = '🎭';
+        if (title) title.textContent = 'ИИ победил!';
     }
 
-    el.textContent = text;
+    el.innerHTML = text;
 }
 
 // ============================================================
 // RESET
 // ============================================================
 
-function resetGameState(){
-    myVote=false;
+function resetGameState() {
+    myVote = false;
+    selectedVoteId = null;
 }
 
 // ============================================================
-// NEW GAME BUTTON HANDLER
+// BUTTON HANDLERS
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', ()=>{
-    document.getElementById('new-game-btn')?.addEventListener('click', async ()=>{
-        try{
-            if(!currentRoomId) return;
-            // remove listener first to avoid reacting to our own delete
+document.addEventListener('DOMContentLoaded', () => {
+    // Новая игра
+    document.getElementById('new-game-btn')?.addEventListener('click', async () => {
+        try {
+            if (!currentRoomId) return;
             removeGameListener();
-            await database.ref('rooms/'+currentRoomId+'/game').remove();
+            await database.ref('rooms/' + currentRoomId + '/game').remove();
             resetGameState();
-            if(myRole==='player1'){
-                // player1 will create new game
+            if (myRole === 'player1') {
                 await startGame();
-            }else{
+            } else {
                 openLobby();
             }
-            // reattach listener if needed
             listenGame();
-        }catch(e){
+        } catch (e) {
             console.error(e);
         }
+    });
+
+    // Подтвердить голос
+    document.getElementById('confirm-vote-btn')?.addEventListener('click', async () => {
+        if (!selectedVoteId) {
+            alert('Выберите рисунок!');
+            return;
+        }
+        await vote(selectedVoteId);
+    });
+
+    // Отменить голос
+    document.getElementById('cancel-vote-btn')?.addEventListener('click', () => {
+        document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById('vote-confirm')?.classList.add('hidden');
+        selectedVoteId = null;
     });
 });
 
@@ -337,10 +342,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // UTILS
 // ============================================================
 
-function shuffle(array){
-    return array.slice().sort(()=>Math.random()-0.5);
+function shuffle(array) {
+    return array.slice().sort(() => Math.random() - 0.5);
 }
 
-console.log(
-"🎮 Am I AI game FIXED loaded"
-);
+console.log("🎮 Am I AI game loaded");
