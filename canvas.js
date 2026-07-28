@@ -51,6 +51,8 @@ function initCanvas(){
 
 
 
+    if(canvasReady)
+        return;
 
 
 
@@ -61,23 +63,7 @@ function initCanvas(){
 
 
 
-
-
-
     prepareCanvas();
-
-
-
-
-
-
-    if(canvasReady)
-        return;
-
-
-
-
-
 
 
 
@@ -102,10 +88,12 @@ function initCanvas(){
     );
 
 
+
     canvas.addEventListener(
         "pointercancel",
         stopDraw
     );
+
 
 
     canvas.addEventListener(
@@ -121,19 +109,57 @@ function initCanvas(){
 
 
 
+    // ========================================================
+    // COLOR PALETTE
+    // ========================================================
+
+
     document
-    .getElementById(
-        "color-picker"
+    .querySelectorAll(
+        ".color-btn"
     )
-    ?.addEventListener(
-        "change",
-        e=>{
+    .forEach(
+    button=>{
 
-            currentColor =
-            e.target.value;
 
-        }
-    );
+        button.addEventListener(
+            "click",
+            ()=>{
+
+
+                currentColor =
+                button.dataset.color;
+
+
+
+                document
+                .querySelectorAll(
+                    ".color-btn"
+                )
+                .forEach(
+                item=>{
+
+
+                    item.classList.remove(
+                        "active"
+                    );
+
+
+                });
+
+
+
+                button.classList.add(
+                    "active"
+                );
+
+
+
+            }
+        );
+
+
+    });
 
 
 
@@ -151,10 +177,12 @@ function initCanvas(){
         "input",
         e=>{
 
+
             currentSize =
             Number(
                 e.target.value
             );
+
 
         }
     );
@@ -199,9 +227,7 @@ function initCanvas(){
 
 
 
-
-
-    canvasReady = true;
+    canvasReady=true;
 
 
 
@@ -224,15 +250,6 @@ function prepareCanvas(){
 
 
 
-    if(!canvas || !ctx)
-        return;
-
-
-
-
-
-
-
     const rect =
     canvas.getBoundingClientRect();
 
@@ -240,26 +257,8 @@ function prepareCanvas(){
 
 
 
-
-
-
-    if(
-        rect.width===0 ||
-        rect.height===0
-    )
-        return;
-
-
-
-
-
-
-
-
-
     const ratio =
     window.devicePixelRatio || 1;
-
 
 
 
@@ -298,13 +297,8 @@ function prepareCanvas(){
 
 
 
-
     ctx.fillStyle =
     "#ffffff";
-
-
-
-
 
 
 
@@ -319,9 +313,6 @@ function prepareCanvas(){
         rect.height
 
     );
-
-
-
 
 
 
@@ -366,7 +357,6 @@ function getPosition(e){
     };
 
 
-
 }
 
 
@@ -393,9 +383,7 @@ function startDraw(e){
 
 
 
-
     drawing=true;
-
 
 
 
@@ -410,7 +398,6 @@ function startDraw(e){
 
 
 
-
     lastX =
     pos.x;
 
@@ -418,8 +405,6 @@ function startDraw(e){
 
     lastY =
     pos.y;
-
-
 
 
 
@@ -473,10 +458,6 @@ function draw(e){
 
 
 
-
-
-
-
     ctx.moveTo(
 
         lastX,
@@ -484,8 +465,6 @@ function draw(e){
         lastY
 
     );
-
-
 
 
 
@@ -521,19 +500,13 @@ function draw(e){
 
 
 
-
     ctx.lineCap =
     "round";
 
 
 
-
-
-
-
     ctx.lineJoin =
     "round";
-
 
 
 
@@ -607,7 +580,6 @@ function clearCanvas(){
 
 
 
-
     const rect =
     canvas.getBoundingClientRect();
 
@@ -616,10 +588,8 @@ function clearCanvas(){
 
 
 
-
     ctx.fillStyle =
     "#ffffff";
-
 
 
 
@@ -666,9 +636,7 @@ async function finishDrawing(){
 
 
 
-
     drawingFinished=true;
-
 
 
 
@@ -680,7 +648,6 @@ async function finishDrawing(){
     canvas.toDataURL(
         "image/png"
     );
-
 
 
 
@@ -708,7 +675,6 @@ async function finishDrawing(){
         Date.now()
 
     });
-
 
 
 
@@ -761,8 +727,6 @@ function drawImageOnCanvas(image){
 
 
 
-
-
     img.onload = ()=>{
 
 
@@ -788,7 +752,6 @@ function drawImageOnCanvas(image){
             rect.height
 
         );
-
 
 
     };
@@ -832,6 +795,25 @@ finishDrawing;
 
 window.drawImageOnCanvas =
 drawImageOnCanvas;
+
+
+
+
+
+
+
+
+
+document
+.addEventListener(
+"DOMContentLoaded",
+()=>{
+
+
+    initCanvas();
+
+
+});
 
 
 
