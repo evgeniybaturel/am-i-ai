@@ -1,468 +1,169 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Am I AI</title>
-
-<link rel="stylesheet" href="style.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Am I AI - Новая версия</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
-
 <body>
-
-
-<div id="app">
-
-
-<!-- Close room button (visible when in a room) -->
-<button id="close-room-btn" class="close-btn hidden" title="Выйти из комнаты">✖</button>
-
-
-<section id="start-screen">
-
-
-<h1>
-Am I AI?
-</h1>
-
-
-<p class="subtitle">
-
-Нарисуй как человек.<br>
-И попробуй обмануть искусственный интеллект.
-
-</p>
-
-
-
-
-
-<div class="panel">
-
-
-<button
-
-class="main-btn"
-
-id="create-room-btn">
-
-🎨 Создать игру
-
-</button>
-
-
-</div>
-
-
-
-
-
-<div class="panel">
-
-
-<input
-
-id="room-input"
-
-placeholder="Код комнаты"
-
-maxlength="6"
-
->
-
-
-<button
-
-class="second-btn"
-
-id="join-room-btn">
-
-🔗 Подключиться
-
-</button>
-
-
-</div>
-
-
-</section>
-
-
-
-
-
-
-<section
-
-id="lobby-screen"
-
-class="hidden">
-
-
-<h2>
-
-Комната
-
-</h2>
-
-
-
-
-<div class="room-card">
-
-
-<span>
-
-Код игры
-
-</span>
-
-
-<strong
-
-id="room-display">
-
-</strong>
-
-
-
-</div>
-
-
-
-
-<div class="waiting">
-
-⏳ Ждём второго игрока...
-
-</div>
-
-
-
-
-
-<button
-
-class="second-btn"
-
-id="leave-room-btn">
-
-🚪 Выйти
-
-</button>
-
-
-</section>
-
-
-
-
-
-
-<section
-
-id="draw-screen"
-
-class="hidden">
-
-
-
-<header>
-
-
-<span>
-
-Раунд рисования
-
-</span>
-
-
-<span id="timer">
-
-60
-
-</span>
-
-
-</header>
-
-
-
-
-
-<div class="task-card">
-
-
-<h3>
-
-Твоё задание:
-
-</h3>
-
-
-<p
-
-id="task-text">
-
-Создание задания...
-
-</p>
-
-
-
-</div>
-
-
-
-
-
-<div class="canvas-wrapper">
-
-
-<canvas
-
-id="draw-canvas"
-
-width="500"
-
-height="500">
-
-</canvas>
-
-
-</div>
-
-
-
-
-<div class="tools">
-
-
-
-<div class="color-palette">
-
-
-<button class="color-btn active" data-color="#111111" style="background:#111111"></button>
-
-<button class="color-btn" data-color="#ef4444" style="background:#ef4444"></button>
-
-<button class="color-btn" data-color="#f97316" style="background:#f97316"></button>
-
-<button class="color-btn" data-color="#eab308" style="background:#eab308"></button>
-
-<button class="color-btn" data-color="#22c55e" style="background:#22c55e"></button>
-
-<button class="color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
-
-<button class="color-btn" data-color="#3b82f6" style="background:#3b82f6"></button>
-
-<button class="color-btn" data-color="#a855f7" style="background:#a855f7"></button>
-
-<button class="color-btn" data-color="#ec4899" style="background:#ec4899"></button>
-
-
-</div>
-
-
-
-
-<input
-
-type="range"
-
-id="size-picker"
-
-min="2"
-
-max="25"
-
-value="5"
-
->
-
-
-
-
-<button
-
-id="clear-btn">
-
-🗑
-
-</button>
-
-
-<button
-
-id="finish-draw-btn">
-
-Готово
-
-</button>
-
-
-</div>
-
-
-</section>
-
-
-
-
-
-<section
-
-id="wait-screen"
-
-class="hidden">
-
-
-<h2>
-
-Готово!
-
-</h2>
-
-
-
-<div class="waiting">
-
-
-🤖 ИИ рисует свой вариант...
-
-</div>
-
-
-</section>
-
-
-
-
-
-<section
-
-id="vote-screen"
-
-class="hidden">
-
-
-<h2>
-
-Кто здесь ИИ?
-
-</h2>
-
-
-
-<p class="subtitle">
-
-Выберите рисунок, который сделал искусственный интеллект.
-
-</p>
-
-
-
-
-<div
-
-id="images-container"
-
-class="images-container">
-
-</div>
-
-<!-- confirmation panel -->
-<div id="vote-confirm" class="vote-confirm hidden">
-  <div id="vote-selected-text">Выбрано: —</div>
-  <div class="vote-actions">
-    <button id="confirm-vote-btn" class="main-btn">Подтвердить</button>
-    <button id="cancel-vote-btn" class="second-btn">Отмена</button>
-  </div>
-</div>
-
-</section>
-
-
-
-
-
-<section
-
-id="result-screen"
-
-class="hidden">
-
-
-<h1>
-
-Эксперимент завершён
-
-</h1>
-
-
-
-<div
-
-class="result-card"
-
-id="result-text">
-
-
-</div>
-
-
-
-<button
-
-class="main-btn"
-
-id="new-game-btn">
-
-Новая игра
-
-</button>
-
-
-
-</section>
-
-
-
-
-</div>
-
-
-
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
-<!-- rough.js for sketchy rendering -->
-<script src="https://cdn.jsdelivr.net/npm/roughjs@4.3.1/bundled/rough.js"></script>
-
-<script src="firebase.js"></script>
-
-<script src="api.js"></script>
-
-<script src="room.js"></script>
-
-<script src="canvas.js"></script>
-
-<script src="ai-drawer.js"></script>
-
-<script src="game.js"></script>
-
-<script src="ui.js"></script>
-
-
+    <div id="app">
+        <!-- Кнопка выхода -->
+        <button id="close-room-btn" class="close-btn hidden">✕</button>
+
+        <!-- СТАРТОВЫЙ ЭКРАН -->
+        <section id="start-screen" class="screen active">
+            <div class="logo-container">
+                <div class="logo-icon">🎨</div>
+                <h1>Am I AI</h1>
+                <p class="subtitle">Нарисуй как человек.<br>Обмани искусственный интеллект.</p>
+            </div>
+
+            <div class="menu">
+                <button class="btn-primary" id="create-room-btn">
+                    <span>🚀</span> Создать игру
+                </button>
+                
+                <div class="divider">или</div>
+                
+                <div class="join-container">
+                    <input 
+                        id="room-input" 
+                        class="input-code" 
+                        placeholder="Введите код" 
+                        maxlength="6"
+                        autocomplete="off"
+                    >
+                    <button class="btn-secondary" id="join-room-btn">
+                        Подключиться
+                    </button>
+                </div>
+            </div>
+
+            <div class="footer">
+                <span class="version">v2.0</span>
+            </div>
+        </section>
+
+        <!-- ЛОББИ -->
+        <section id="lobby-screen" class="screen hidden">
+            <div class="lobby-header">
+                <h2>Комната</h2>
+                <div class="room-code">
+                    <span>Код:</span>
+                    <strong id="room-display">------</strong>
+                </div>
+            </div>
+
+            <div class="lobby-status">
+                <div class="status-icon">⏳</div>
+                <p id="lobby-status-text">Ожидание второго игрока...</p>
+                <div class="loading-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+
+            <button class="btn-danger" id="leave-room-btn">Выйти из комнаты</button>
+        </section>
+
+        <!-- РИСОВАНИЕ -->
+        <section id="draw-screen" class="screen hidden">
+            <div class="draw-header">
+                <div class="task-badge">Задание</div>
+                <div class="timer-container">
+                    <svg class="timer-circle" viewBox="0 0 36 36">
+                        <path class="timer-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="timer-progress" id="timer-progress" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                    <span id="timer" class="timer-text">60</span>
+                </div>
+            </div>
+
+            <div class="task-card">
+                <p id="task-text">Загрузка задания...</p>
+            </div>
+
+            <div class="canvas-wrapper">
+                <canvas id="draw-canvas" width="500" height="500"></canvas>
+            </div>
+
+            <div class="tools">
+                <div class="color-palette">
+                    <button class="color-btn active" data-color="#1a1a1a" style="background:#1a1a1a"></button>
+                    <button class="color-btn" data-color="#dc2626" style="background:#dc2626"></button>
+                    <button class="color-btn" data-color="#f97316" style="background:#f97316"></button>
+                    <button class="color-btn" data-color="#eab308" style="background:#eab308"></button>
+                    <button class="color-btn" data-color="#22c55e" style="background:#22c55e"></button>
+                    <button class="color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
+                    <button class="color-btn" data-color="#3b82f6" style="background:#3b82f6"></button>
+                    <button class="color-btn" data-color="#8b5cf6" style="background:#8b5cf6"></button>
+                    <button class="color-btn" data-color="#ec4899" style="background:#ec4899"></button>
+                </div>
+
+                <div class="tool-controls">
+                    <input type="range" id="size-picker" min="2" max="20" value="5">
+                    <div class="size-label">Размер</div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-clear" id="clear-btn">🗑️ Очистить</button>
+                    <button class="btn-finish" id="finish-draw-btn">✅ Отправить</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ОЖИДАНИЕ -->
+        <section id="wait-screen" class="screen hidden">
+            <div class="waiting-container">
+                <div class="waiting-icon">🤖</div>
+                <h2>ИИ рисует...</h2>
+                <p>Подождите, искусственный интеллект создаёт свой вариант</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="ai-progress"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ГОЛОСОВАНИЕ -->
+        <section id="vote-screen" class="screen hidden">
+            <h2>Кто здесь ИИ?</h2>
+            <p class="vote-subtitle">Выберите рисунок, созданный искусственным интеллектом</p>
+
+            <div id="images-container" class="images-grid"></div>
+
+            <div id="vote-confirm" class="vote-confirm hidden">
+                <p id="vote-selected-text">Выбрано: —</p>
+                <div class="vote-actions">
+                    <button class="btn-primary" id="confirm-vote-btn">Подтвердить</button>
+                    <button class="btn-secondary" id="cancel-vote-btn">Отмена</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- РЕЗУЛЬТАТ -->
+        <section id="result-screen" class="screen hidden">
+            <div class="result-container">
+                <div class="result-icon" id="result-icon">🎭</div>
+                <h2 id="result-title">Эксперимент завершён!</h2>
+                <div class="result-card" id="result-text">
+                    <p>Результаты загружаются...</p>
+                </div>
+                <button class="btn-primary" id="new-game-btn">🔄 Новая игра</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    
+    <!-- Скрипты -->
+    <script src="firebase.js"></script>
+    <script src="api.js"></script>
+    <script src="room.js"></script>
+    <script src="canvas.js"></script>
+    <script src="ai-drawer.js"></script>
+    <script src="game.js"></script>
+    <script src="ui.js"></script>
 </body>
-
-
 </html>
