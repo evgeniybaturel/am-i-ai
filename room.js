@@ -64,16 +64,21 @@ function generateRoomCode(){
     const chars =
     "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+
     let code="";
 
+
     for(let i=0;i<6;i++){
+
         code +=
         chars[
             Math.floor(
                 Math.random()*chars.length
             )
         ];
+
     }
+
 
     return code;
 
@@ -87,14 +92,18 @@ function generateRoomCode(){
 
 async function createRoom(){
 
+
     myPlayerId =
     createPlayerId();
+
 
     myRole =
     "player1";
 
+
     currentRoomId =
     generateRoomCode();
+
 
     // create room atomically only if not exists (safety)
     const ref = database.ref("rooms/" + currentRoomId);
@@ -128,6 +137,8 @@ async function createRoom(){
 
     listenRoom();
 
+    showCloseButton();
+
 }
 
 
@@ -143,46 +154,63 @@ async function joinRoom(){
         "room-input"
     );
 
+
     const code =
     (input?.value || "")
     .trim()
     .toUpperCase();
 
+
     if(!code)
         return;
+
 
     const ref =
     database.ref(
         "rooms/" + code
     );
 
+
     const snap =
     await ref.once(
         "value"
     );
 
+
     if(!snap.exists()){
+
         alert(
             "Комната не найдена"
         );
+
         return;
+
     }
+
 
     const room = snap.val();
 
+
     myPlayerId = createPlayerId();
+
 
     if(
         room.player1 &&
         room.player1.id===myPlayerId
     ){
+
         myRole="player1";
+
     }
     else if(
+
         room.player2 &&
         room.player2.id===myPlayerId
+
     ){
+
         myRole="player2";
+
     }
     else{
         // Use transaction to avoid race when two clients try to join
@@ -224,6 +252,8 @@ async function joinRoom(){
 
     listenRoom();
 
+    showCloseButton();
+
 }
 
 
@@ -233,15 +263,19 @@ async function joinRoom(){
 
 
 function saveRoom(){
+
     localStorage.setItem(
         "amIAI_room",
         currentRoomId
     );
 
+
     localStorage.setItem(
         "amIAI_role",
         myRole
     );
+
+
 }
 
 
@@ -300,6 +334,8 @@ async function restoreRoom(){
     openLobby();
 
     listenRoom();
+
+    showCloseButton();
 }
 
 
@@ -425,6 +461,8 @@ async function leaveRoom(){
     myRole=null;
     removeRoomListener();
 
+    hideCloseButton();
+
     location.reload();
 }
 
@@ -456,6 +494,7 @@ function showCreatedRoom(code){
         code;
 }
 
+
 function showRoomReady(){
     const wait =
     document.querySelector(
@@ -465,6 +504,16 @@ function showRoomReady(){
     if(wait)
         wait.textContent =
         "✅ Игрок найден. Начинаем...";
+}
+
+// show/hide close button
+function showCloseButton(){
+    const el = document.getElementById('close-room-btn');
+    if(el) el.classList.remove('hidden');
+}
+function hideCloseButton(){
+    const el = document.getElementById('close-room-btn');
+    if(el) el.classList.add('hidden');
 }
 
 
@@ -506,6 +555,11 @@ document
     // allow Enter key to join
     document.getElementById('room-input')?.addEventListener('keydown', e => {
         if(e.key === 'Enter') joinRoom();
+    });
+
+    // close button (top-right)
+    document.getElementById('close-room-btn')?.addEventListener('click', ()=>{
+        leaveRoom();
     });
 
     restoreRoom();

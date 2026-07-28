@@ -1,3 +1,29 @@
+/* Close button (top-right) */
+.close-btn{
+    position:absolute;
+    top:18px;
+    right:18px;
+    background:transparent;
+    border:none;
+    color:white;
+    font-size:20px;
+    width:36px;
+    height:36px;
+    border-radius:8px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s, transform .08s;
+    z-index:40;
+}
+
+.close-btn:hover{
+    background:rgba(255,255,255,0.06);
+    transform:scale(1.05);
+}
+
+/* keep existing file content below (unchanged) */
 * {
 
     margin:0;
@@ -107,7 +133,6 @@ section {
 
 
 
-
 @keyframes fade {
 
 
@@ -191,7 +216,6 @@ h3 {
 
 
 
-
 .subtitle {
 
 
@@ -204,6 +228,7 @@ h3 {
     line-height:1.5;
 
 }
+
 
 
 
@@ -236,6 +261,7 @@ h3 {
 
 
 }
+
 
 
 
@@ -276,6 +302,7 @@ input {
 
 
 
+
 input:focus {
 
 
@@ -283,7 +310,6 @@ input:focus {
 
 
 }
-
 
 
 
@@ -324,6 +350,7 @@ button:active {
 
 
 
+
 .main-btn {
 
 
@@ -352,6 +379,8 @@ button:active {
 
 
 
+
+
 .second-btn {
 
 
@@ -373,7 +402,6 @@ button:active {
     1px solid #3f3f55;
 
 }
-
 
 
 
@@ -549,8 +577,6 @@ header {
 
 
 
-
-
 /* CANVAS */
 
 
@@ -585,7 +611,6 @@ header {
 
 
 
-
 #draw-canvas {
 
 
@@ -596,8 +621,6 @@ header {
     display:block;
 
 }
-
-
 
 
 
@@ -653,7 +676,6 @@ header {
 
 
 
-
 .color-btn {
 
 
@@ -675,17 +697,12 @@ header {
 
 
 
-
-
 .color-btn:hover {
 
 
     transform:scale(1.15);
 
 }
-
-
-
 
 
 
@@ -702,18 +719,12 @@ header {
 
 
 
-
-
-
 #size-picker {
 
 
     width:100%;
 
 }
-
-
-
 
 
 
@@ -734,7 +745,6 @@ header {
 
 
 
-
 #finish-draw-btn {
 
 
@@ -745,15 +755,12 @@ header {
 
 
 
-
 #clear-btn {
 
 
     background:#ef4444;
 
 }
-
-
 
 
 
@@ -776,7 +783,6 @@ header {
     gap:18px;
 
 }
-
 
 
 
@@ -804,16 +810,12 @@ header {
 
 
 
-
-
 .vote-card:hover {
 
 
     transform:scale(1.02);
 
 }
-
-
 
 
 
@@ -827,8 +829,6 @@ header {
 
 
 }
-
-
 
 
 
@@ -864,8 +864,6 @@ header {
 
 
 
-
-
 @media(max-width:420px){
 
 
@@ -887,6 +885,7 @@ h1 {
     font-size:40px;
 
 }
+
 
 
 }

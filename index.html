@@ -20,6 +20,9 @@
 <div id="app">
 
 
+<!-- Close room button (visible when in a room) -->
+<button id="close-room-btn" class="close-btn hidden" title="Выйти из комнаты">✖</button>
+
 
 <section id="start-screen">
 
@@ -54,9 +57,7 @@ id="create-room-btn">
 </button>
 
 
-
 </div>
-
 
 
 
@@ -90,11 +91,7 @@ id="join-room-btn">
 </div>
 
 
-
 </section>
-
-
-
 
 
 
@@ -108,13 +105,11 @@ id="lobby-screen"
 class="hidden">
 
 
-
 <h2>
 
 Комната
 
 </h2>
-
 
 
 
@@ -142,16 +137,11 @@ id="room-display">
 
 
 
-
-
 <div class="waiting">
-
 
 ⏳ Ждём второго игрока...
 
 </div>
-
-
 
 
 
@@ -168,12 +158,7 @@ id="leave-room-btn">
 </button>
 
 
-
-
 </section>
-
-
-
 
 
 
@@ -188,8 +173,6 @@ class="hidden">
 
 
 
-
-
 <header>
 
 
@@ -200,7 +183,6 @@ class="hidden">
 </span>
 
 
-
 <span id="timer">
 
 60
@@ -209,9 +191,6 @@ class="hidden">
 
 
 </header>
-
-
-
 
 
 
@@ -243,10 +222,6 @@ id="task-text">
 
 
 
-
-
-
-
 <div class="canvas-wrapper">
 
 
@@ -262,10 +237,6 @@ height="500">
 
 
 </div>
-
-
-
-
 
 
 
@@ -301,7 +272,6 @@ height="500">
 
 
 
-
 <input
 
 type="range"
@@ -319,7 +289,6 @@ value="5"
 
 
 
-
 <button
 
 id="clear-btn">
@@ -327,7 +296,6 @@ id="clear-btn">
 🗑
 
 </button>
-
 
 
 <button
@@ -339,21 +307,10 @@ id="finish-draw-btn">
 </button>
 
 
-
 </div>
 
 
-
-
-
-
-
-
 </section>
-
-
-
-
 
 
 
@@ -366,13 +323,11 @@ id="wait-screen"
 class="hidden">
 
 
-
 <h2>
 
 Готово!
 
 </h2>
-
 
 
 
@@ -384,12 +339,7 @@ class="hidden">
 </div>
 
 
-
 </section>
-
-
-
-
 
 
 
@@ -402,7 +352,6 @@ id="vote-screen"
 class="hidden">
 
 
-
 <h2>
 
 Кто здесь ИИ?
@@ -411,17 +360,11 @@ class="hidden">
 
 
 
-
-
 <p class="subtitle">
 
 Выберите рисунок, который сделал искусственный интеллект.
 
 </p>
-
-
-
-
 
 
 
@@ -436,14 +379,7 @@ class="images-container">
 
 
 
-
-
-
 </section>
-
-
-
-
 
 
 
@@ -456,16 +392,11 @@ id="result-screen"
 class="hidden">
 
 
-
 <h1>
 
 Эксперимент завершён
 
 </h1>
-
-
-
-
 
 
 
@@ -477,10 +408,6 @@ id="result-text">
 
 
 </div>
-
-
-
-
 
 
 
@@ -496,12 +423,7 @@ id="new-game-btn">
 
 
 
-
-
 </section>
-
-
-
 
 
 
@@ -512,15 +434,9 @@ id="new-game-btn">
 
 
 
-
-
-
-
-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
 
 
 
@@ -538,7 +454,6 @@ id="new-game-btn">
 <script src="game.js"></script>
 
 <script src="ui.js"></script>
-
 
 
 </body>
