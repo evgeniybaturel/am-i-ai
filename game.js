@@ -77,7 +77,14 @@ function listenGame(){
         if(!game) return;
 
         if(game.status==="drawing"){
-            openDrawScreen(game.task);
+            // prevent reopening draw screen if this player already submitted their drawing
+            const hasMyDrawing = game.drawings && game.drawings[myRole] && game.drawings[myRole].finished;
+            if(hasMyDrawing){
+                // show waiting state so the player cannot draw again
+                openWait();
+            } else {
+                openDrawScreen(game.task);
+            }
         }
 
         if(
