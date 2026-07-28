@@ -377,7 +377,14 @@ class="images-container">
 
 </div>
 
-
+<!-- confirmation panel -->
+<div id="vote-confirm" class="vote-confirm hidden">
+  <div id="vote-selected-text">Выбрано: —</div>
+  <div class="vote-actions">
+    <button id="confirm-vote-btn" class="main-btn">Подтвердить</button>
+    <button id="cancel-vote-btn" class="second-btn">Отмена</button>
+  </div>
+</div>
 
 </section>
 
@@ -428,7 +435,6 @@ id="new-game-btn">
 
 
 
-
 </div>
 
 
@@ -438,8 +444,8 @@ id="new-game-btn">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-
-
+<!-- rough.js for sketchy rendering -->
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.3.1/bundled/rough.js"></script>
 
 <script src="firebase.js"></script>
 
