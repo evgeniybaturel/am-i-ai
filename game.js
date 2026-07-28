@@ -8,7 +8,6 @@ let gameListenerStarted = false;
 let myVote = false;
 let selectedVoteId = null;
 
-// refs for cleanup
 let gameRef = null;
 let gameCallback = null;
 
@@ -58,11 +57,17 @@ function listenGame() {
         const game = snapshot.val();
         if (!game) return;
 
+        console.log('📡 Обновление игры:', game);
+
         if (game.status === "drawing") {
+            // Проверяем, есть ли рисунок этого игрока
             const hasMyDrawing = game.drawings && game.drawings[myRole] && game.drawings[myRole].finished;
+            
             if (hasMyDrawing) {
+                // Если игрок уже отправил рисунок - показываем экран ожидания
                 openWait();
             } else {
+                // Иначе показываем экран рисования
                 openDrawScreen(game.task);
             }
         }
@@ -104,6 +109,7 @@ function openDrawScreen(task) {
     const text = document.getElementById("task-text");
     if (text) text.textContent = task;
 
+    // Сбрасываем состояние рисования
     if (typeof window.resetDrawingState === 'function') {
         window.resetDrawingState();
     }
@@ -188,7 +194,6 @@ function openVoting(drawings) {
         container.appendChild(card);
     });
 
-    // Скрываем подтверждение при новой загрузке
     document.getElementById('vote-confirm')?.classList.add('hidden');
     selectedVoteId = null;
 }
@@ -303,7 +308,6 @@ function resetGameState() {
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Новая игра
     document.getElementById('new-game-btn')?.addEventListener('click', async () => {
         try {
             if (!currentRoomId) return;
@@ -321,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Подтвердить голос
     document.getElementById('confirm-vote-btn')?.addEventListener('click', async () => {
         if (!selectedVoteId) {
             alert('Выберите рисунок!');
@@ -330,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
         await vote(selectedVoteId);
     });
 
-    // Отменить голос
     document.getElementById('cancel-vote-btn')?.addEventListener('click', () => {
         document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'));
         document.getElementById('vote-confirm')?.classList.add('hidden');
