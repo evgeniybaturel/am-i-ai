@@ -1,180 +1,67 @@
 // ============================================================
-// UI ENGINE v2.0
-// Детектив на прогулке
+// UI CONTROLLER
+// NOT A HUMAN: DRAW
+// Screen manager
 // ============================================================
 
 
 
 // ============================================================
-// ЭКРАНЫ
+// SCREEN CONTROL
 // ============================================================
 
 
-function showGameScreen(){
+function showScreen(id){
 
-    document
-    .getElementById("start-screen")
-    .classList.add("hidden");
 
 
     document
-    .getElementById("game-screen")
-    .classList.remove("hidden");
+    .querySelectorAll(
+        "section"
+    )
+    .forEach(
+    section=>{
 
 
+        section
+        .classList
+        .add(
+            "hidden"
+        );
+
+
+    });
+
+
+
+
+
+
+
+    const screen =
     document
-    .getElementById("final-screen")
-    .classList.add("hidden");
-
-}
-
-
-
-
-
-function showFinalScreen(){
-
-    document
-    .getElementById("start-screen")
-    .classList.add("hidden");
-
-
-    document
-    .getElementById("game-screen")
-    .classList.add("hidden");
-
-
-    document
-    .getElementById("final-screen")
-    .classList.remove("hidden");
-
-}
-
-
-
-
-
-function showStartScreen(){
-
-    document
-    .getElementById("start-screen")
-    .classList.remove("hidden");
-
-
-    document
-    .getElementById("game-screen")
-    .classList.add("hidden");
-
-
-    document
-    .getElementById("final-screen")
-    .classList.add("hidden");
-
-}
-
-
-
-
-
-
-// ============================================================
-// STATUS
-// ============================================================
-
-
-function updateUI(text,color){
-
-
-    const status =
-    document.getElementById(
-        "chat-status"
-    );
-
-
-    if(!status)
-        return;
-
-
-
-    status.textContent =
-        "● " + text;
-
-
-
-    status.style.color=color;
-
-
-}
-
-
-
-
-
-
-// ============================================================
-// LOADING
-// ============================================================
-
-
-function setLoading(value){
-
-
-    const send =
-    document.getElementById(
-        "send-btn"
-    );
-
-
-    const input =
-    document.getElementById(
-        "chat-input"
+    .getElementById(
+        id
     );
 
 
 
-    if(send)
-        send.disabled=value;
 
 
-
-    if(input)
-        input.disabled=value;
+    if(screen){
 
 
-}
-
-
-
-
-
-
-function showThinking(value){
-
-
-    const status =
-    document.getElementById(
-        "chat-status"
-    );
-
-
-    if(!status)
-        return;
-
-
-
-    if(value){
-
-
-        status.textContent =
-        "● думает...";
-
-
-        status.style.color =
-        "#fbbf24";
+        screen
+        .classList
+        .remove(
+            "hidden"
+        );
 
 
     }
 
+
+
 }
 
 
@@ -184,26 +71,19 @@ function showThinking(value){
 
 
 
+
 // ============================================================
-// СООБЩЕНИЯ
+// START
 // ============================================================
 
 
-const chatMessages =
-document.getElementById(
-    "chat-messages"
-);
+function openStart(){
 
 
+    showScreen(
+        "start-screen"
+    );
 
-
-
-function scrollBottom(){
-
-    if(chatMessages)
-
-        chatMessages.scrollTop =
-        chatMessages.scrollHeight;
 
 }
 
@@ -213,37 +93,254 @@ function scrollBottom(){
 
 
 
-function typeMessage(element,text){
 
 
-    let i=0;
+// ============================================================
+// LOBBY
+// ============================================================
+
+
+function openLobby(){
+
+
+    showScreen(
+        "lobby-screen"
+    );
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// DRAW
+// ============================================================
+
+
+function openDrawing(){
+
+
+    showScreen(
+        "draw-screen"
+    );
+
+
+
+    setTimeout(()=>{
+
+
+        if(
+            typeof initCanvas === "function"
+        ){
+
+
+            initCanvas();
+
+
+        }
+
+
+
+    },100);
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// WAIT
+// ============================================================
+
+
+function openWait(){
+
+
+    showScreen(
+        "wait-screen"
+    );
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// VOTE
+// ============================================================
+
+
+function openVote(){
+
+
+    showScreen(
+        "vote-screen"
+    );
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// RESULT
+// ============================================================
+
+
+function openResult(){
+
+
+    showScreen(
+        "result-screen"
+    );
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// ROOM DISPLAY
+// ============================================================
+
+
+function updateRoomCode(code){
+
+
+
+    const el =
+    document
+    .getElementById(
+        "room-display"
+    );
+
+
+
+
+    if(el){
+
+
+        el.textContent =
+        code;
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// ============================================================
+// TIMER
+// ============================================================
+
+
+let timerValue = 60;
+
+let timerInterval = null;
+
+
+
+
+
+
+
+
+
+function startTimer(){
+
+
+
+    if(timerInterval)
+        clearInterval(
+            timerInterval
+        );
+
+
+
+
+    timerValue = 60;
+
+
+
 
 
     const timer =
+    document
+    .getElementById(
+        "timer"
+    );
+
+
+
+
+
+    if(timer)
+
+        timer.textContent =
+        timerValue;
+
+
+
+
+
+
+
+    timerInterval =
     setInterval(()=>{
 
 
-        element.textContent +=
-        text[i];
 
-
-        i++;
-
-
-        scrollBottom();
+        timerValue--;
 
 
 
-        if(i>=text.length)
-
-            clearInterval(timer);
 
 
+        if(timer)
 
-    },15);
 
-
-}
+            timer.textContent =
+            timerValue;
 
 
 
@@ -251,83 +348,22 @@ function typeMessage(element,text){
 
 
 
-function addMessage(type,text){
-
-
-    const box =
-    document.createElement(
-        "div"
-    );
+        if(timerValue<=0){
 
 
 
-    box.className =
-    "message message-"+type;
+            clearInterval(
+                timerInterval
+            );
 
 
 
-    chatMessages.appendChild(
-        box
-    );
-
-
-
-    typeMessage(
-        box,
-        text
-    );
-
-
-
-    saveMessage(
-        type,
-        text
-    );
-
-
-
-    return box;
-
-
-}
+        }
 
 
 
 
-
-
-function addMessageInstant(type,text){
-
-
-    const box =
-    document.createElement(
-        "div"
-    );
-
-
-
-    box.className =
-    "message message-"+type;
-
-
-    box.textContent=text;
-
-
-
-    chatMessages.appendChild(
-        box
-    );
-
-
-
-    scrollBottom();
-
-
-
-    saveMessage(
-        type,
-        text
-    );
+    },1000);
 
 
 
@@ -338,83 +374,20 @@ function addMessageInstant(type,text){
 
 
 
-function saveMessage(type,text){
-
-
-    if(
-        window.state &&
-        window.state.messages
-    ){
-
-
-        window.state.messages.push({
-
-            type,
-
-            text,
-
-            time:
-            Date.now()
-
-        });
-
-
-    }
-
-}
 
 
 
+function stopTimer(){
 
 
 
-function addSystemMessage(text){
+    if(timerInterval)
 
 
-    const box =
-    document.createElement(
-        "div"
-    );
+        clearInterval(
+            timerInterval
+        );
 
-
-    box.className =
-    "message message-system";
-
-
-    box.textContent=text;
-
-
-
-    chatMessages.appendChild(
-        box
-    );
-
-
-
-    scrollBottom();
-
-
-}
-
-
-
-
-
-
-function removeLastSystemMessage(){
-
-
-    const list =
-    document.querySelectorAll(
-        ".message-system"
-    );
-
-
-    if(list.length)
-
-
-        list[list.length-1]
-        .remove();
 
 
 }
@@ -428,156 +401,20 @@ function removeLastSystemMessage(){
 
 
 // ============================================================
-// ИНВЕНТАРЬ
+// INIT
 // ============================================================
 
 
-function openInventory(){
-
-
-    const modal =
-    document.getElementById(
-        "modal"
-    );
-
-
-    const body =
-    document.getElementById(
-        "modal-body"
-    );
-
-
-
-    if(!modal || !body)
-        return;
-
-
-
-    const clues =
-    state.clues || [];
-
-
-
-    if(clues.length===0){
-
-
-        body.innerHTML =
-        `
-        <div class="empty">
-        Улик пока нет
-        </div>
-        `;
-
-
-    }
-
-    else{
-
-
-        body.innerHTML =
-        clues.map(
-        (c,i)=>`
-
-        <div class="clue-item">
-
-            <div class="clue-text">
-            ${i+1}. ${c}
-            </div>
-
-            <div class="clue-meta">
-            Найдено
-            </div>
-
-        </div>
-
-        `
-        ).join("");
-
-    }
-
-
-
-    modal.classList.remove(
-        "hidden"
-    );
-
-
-}
-
-
-
-
-
-
-function closeModal(){
-
-
-    document
-    .getElementById("modal")
-    .classList.add("hidden");
-
-
-}
-
-
-
-
-
-
-
-// ============================================================
-// DOM
-// ============================================================
-
-
-document.addEventListener(
+document
+.addEventListener(
 "DOMContentLoaded",
 ()=>{
 
 
-    const inventory =
-    document.getElementById(
-        "inventory-toggle"
+
+    console.log(
+        "🎨 UI initialized"
     );
-
-
-    if(inventory)
-
-        inventory.onclick =
-        openInventory;
-
-
-
-
-    const close =
-    document.getElementById(
-        "modal-close"
-    );
-
-
-    if(close)
-
-        close.onclick =
-        closeModal;
-
-
-
-
-    const modal =
-    document.getElementById(
-        "modal"
-    );
-
-
-    if(modal)
-
-        modal.onclick=e=>{
-
-            if(e.target===modal)
-
-                closeModal();
-
-        };
 
 
 
@@ -587,6 +424,10 @@ document.addEventListener(
 
 
 
+
+
+
+
 console.log(
-"🎨 UI Engine v2.0 loaded"
+"🖥️ UI controller loaded"
 );
