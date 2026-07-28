@@ -170,6 +170,14 @@ async function finishDrawing(){
 
     const image = canvas.toDataURL("image/png");
 
+    // validate dataURL length to avoid saving empty "data:,"
+    if(!image || image.length < 100){
+        console.warn('finishDrawing: invalid or empty image, not saving');
+        alert('Не удалось сохранить рисунок. Попробуйте ещё раз.');
+        drawingFinished = false; // allow retry
+        return;
+    }
+
     if(!currentRoomId || !myRole) return;
 
     await database

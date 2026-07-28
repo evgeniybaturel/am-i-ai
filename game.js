@@ -206,7 +206,14 @@ function openVoting(drawings){
         const card = document.createElement("div");
         card.className = "vote-card";
         const img = document.createElement("img");
-        img.src = item.image;
+        // validate image string before assigning
+        if(item.image && typeof item.image === 'string' && item.image.length > 20 && (item.image.startsWith('data:') || item.image.startsWith('http'))){
+            img.src = item.image;
+        } else {
+            img.alt = "Изображение недоступно";
+            img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=";
+            console.warn('openVoting: invalid image for', item.id, item.image);
+        }
         card.appendChild(img);
         card.onclick = ()=>vote(item.id, card);
         container.appendChild(card);
@@ -301,14 +308,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
     document.getElementById('new-game-btn')?.addEventListener('click', async ()=>{
         try{
             if(!currentRoomId) return;
+            // remove listener first to avoid reacting to our own delete
+            removeGameListener();
             await database.ref('rooms/'+currentRoomId+'/game').remove();
             resetGameState();
             if(myRole==='player1'){
                 // player1 will create new game
-                startGame();
+                await startGame();
             }else{
                 openLobby();
             }
+            // reattach listener if needed
+            listenGame();
         }catch(e){
             console.error(e);
         }
