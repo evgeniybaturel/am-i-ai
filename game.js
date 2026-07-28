@@ -1,18 +1,15 @@
 // ============================================================
 // GAME ENGINE
-// NOT A HUMAN: DRAW
-// Multiplayer drawing game
+// AM I AI
+// Multiplayer drawing experiment
 // ============================================================
 
 
+let gameListenerStarted = false;
 
-let currentGameListener = false;
+let aiStarted = false;
 
-let gameStarted = false;
-
-let drawingStarted = false;
-
-let currentTask = "";
+let myVote = false;
 
 
 
@@ -72,7 +69,6 @@ async function startGame(){
 
 
 
-
     if(game){
 
 
@@ -91,9 +87,10 @@ async function startGame(){
 
 
 
-    // создаёт только первый игрок
 
-    if(myRole !== "player1")
+    if(
+        myRole !== "player1"
+    )
         return;
 
 
@@ -111,26 +108,22 @@ async function startGame(){
 
 
 
+
+
+
     await ref.set({
 
         task:task,
 
-
-        status:
-        "drawing",
-
+        status:"drawing",
 
         drawings:{},
 
-
         votes:{},
-
 
         aiStarted:false,
 
-
         finished:false
-
 
     });
 
@@ -146,7 +139,6 @@ async function startGame(){
 
 
 
-
 }
 
 
@@ -158,7 +150,7 @@ async function startGame(){
 
 
 // ============================================================
-// LISTEN GAME
+// LISTENER
 // ============================================================
 
 
@@ -166,12 +158,14 @@ function listenGame(){
 
 
 
-    if(currentGameListener)
+    if(gameListenerStarted)
         return;
 
 
 
-    currentGameListener=true;
+
+
+    gameListenerStarted=true;
 
 
 
@@ -188,8 +182,6 @@ function listenGame(){
     .on(
     "value",
     snapshot=>{
-
-
 
 
 
@@ -217,11 +209,9 @@ function listenGame(){
         ){
 
 
-
             openDrawScreen(
                 game.task
             );
-
 
 
         }
@@ -232,7 +222,7 @@ function listenGame(){
 
 
 
-        // оба человека закончили
+
 
         if(
 
@@ -251,7 +241,6 @@ function listenGame(){
             startAI(game);
 
 
-
         }
 
 
@@ -261,7 +250,6 @@ function listenGame(){
 
 
 
-        // все рисунки готовы
 
         if(
 
@@ -282,7 +270,6 @@ function listenGame(){
             );
 
 
-
         }
 
 
@@ -298,16 +285,13 @@ function listenGame(){
         ){
 
 
+
             showResultScreen(
                 game
             );
 
 
         }
-
-
-
-
 
 
 
@@ -326,7 +310,7 @@ function listenGame(){
 
 
 // ============================================================
-// OPEN DRAW
+// OPEN DRAW SCREEN
 // ============================================================
 
 
@@ -341,11 +325,14 @@ function openDrawScreen(task){
 
 
 
+
+
+
     const text =
-    document
-    .getElementById(
+    document.getElementById(
         "task-text"
     );
+
 
 
 
@@ -355,8 +342,6 @@ function openDrawScreen(task){
 
         text.textContent =
         task;
-
-
 
 
 
@@ -371,7 +356,7 @@ function openDrawScreen(task){
 
 
 // ============================================================
-// AI START
+// START AI
 // ============================================================
 
 
@@ -392,7 +377,7 @@ async function startAI(game){
 
 
 
-    const snap =
+    const snapshot =
     await ref.once(
         "value"
     );
@@ -403,7 +388,8 @@ async function startAI(game){
 
 
     const current =
-    snap.val();
+    snapshot.val();
+
 
 
 
@@ -415,6 +401,7 @@ async function startAI(game){
         current.aiStarted
     )
         return;
+
 
 
 
@@ -442,8 +429,6 @@ async function startAI(game){
 
 
 
-
-
 }
 
 
@@ -463,6 +448,30 @@ function openVoting(drawings){
 
 
 
+    if(
+        document
+        .getElementById(
+            "vote-screen"
+        )
+        &&
+        !document
+        .getElementById(
+            "vote-screen"
+        )
+        .classList
+        .contains(
+            "hidden"
+        )
+    )
+        return;
+
+
+
+
+
+
+
+
     showScreen(
         "vote-screen"
     );
@@ -471,11 +480,14 @@ function openVoting(drawings){
 
 
 
+
+
+
     const container =
-    document
-    .getElementById(
+    document.getElementById(
         "images-container"
     );
+
 
 
 
@@ -490,25 +502,27 @@ function openVoting(drawings){
 
 
 
-    const list = [
+
+
+    const cards = [
 
         {
             id:"player1",
-            image:drawings.player1.image
+            image:
+            drawings.player1.image
         },
-
 
         {
             id:"player2",
-            image:drawings.player2.image
+            image:
+            drawings.player2.image
         },
-
 
         {
             id:"ai",
-            image:drawings.ai.image
+            image:
+            drawings.ai.image
         }
-
 
     ];
 
@@ -519,14 +533,10 @@ function openVoting(drawings){
 
 
 
-    shuffle(
-        list
-    )
+
+    shuffle(cards)
     .forEach(
     item=>{
-
-
-
 
 
 
@@ -537,11 +547,8 @@ function openVoting(drawings){
 
 
 
-
         card.className =
         "vote-card";
-
-
 
 
 
@@ -563,9 +570,8 @@ function openVoting(drawings){
 
 
 
-        img.width =
-        250;
-
+        img.style.width =
+        "100%";
 
 
 
@@ -581,14 +587,11 @@ function openVoting(drawings){
 
 
 
-
-
         card.onclick =
         ()=>vote(
-            item.id
+            item.id,
+            card
         );
-
-
 
 
 
@@ -598,9 +601,6 @@ function openVoting(drawings){
         container.appendChild(
             card
         );
-
-
-
 
 
 
@@ -624,7 +624,21 @@ function openVoting(drawings){
 // ============================================================
 
 
-async function vote(id){
+async function vote(id,card){
+
+
+
+    if(myVote)
+        return;
+
+
+
+
+
+    myVote=true;
+
+
+
 
 
 
@@ -632,10 +646,12 @@ async function vote(id){
 
     await database
     .ref(
+
         "rooms/" +
         currentRoomId +
         "/game/votes/" +
         myRole
+
     )
     .set({
 
@@ -653,13 +669,8 @@ async function vote(id){
 
 
 
-    document
-    .getElementById(
-        "images-container"
-    )
-    .innerHTML =
-
-    "Голос отправлен. Ждём второго игрока...";
+    card.style.opacity =
+    "0.5";
 
 
 
@@ -692,9 +703,11 @@ function checkVotes(){
 
     database
     .ref(
+
         "rooms/" +
         currentRoomId +
         "/game/votes"
+
     )
     .on(
     "value",
@@ -709,10 +722,13 @@ function checkVotes(){
 
 
 
+
         if(
+
             votes &&
             votes.player1 &&
             votes.player2
+
         ){
 
 
@@ -720,6 +736,7 @@ function checkVotes(){
             finishGame(
                 votes
             );
+
 
 
         }
@@ -741,7 +758,7 @@ function checkVotes(){
 
 
 // ============================================================
-// FINISH
+// FINISH GAME
 // ============================================================
 
 
@@ -782,6 +799,7 @@ async function finishGame(votes){
 
 
 
+
     if(
         game.finished
     )
@@ -798,12 +816,12 @@ async function finishGame(votes){
 
         finished:true,
 
-        finalVotes:votes
+        finalVotes:votes,
+
+        status:"finished"
 
 
     });
-
-
 
 
 
@@ -834,9 +852,11 @@ function showResultScreen(game){
 
 
 
+
+
+
     const el =
-    document
-    .getElementById(
+    document.getElementById(
         "result-text"
     );
 
@@ -844,26 +864,92 @@ function showResultScreen(game){
 
 
 
-    if(el){
 
 
-        el.textContent =
+    if(!el)
+        return;
 
-        "Игроки выбрали:\n\n" +
 
-        "Игрок 1: " +
 
-        game.finalVotes.player1.answer +
 
-        "\n\n" +
 
-        "Игрок 2: " +
 
-        game.finalVotes.player2.answer;
 
+
+    let text =
+
+    "Эксперимент завершён\n\n";
+
+
+
+
+
+
+
+
+    text +=
+
+    "Игрок 1 выбрал: " +
+
+    game.finalVotes.player1.answer +
+
+    "\n\n";
+
+
+
+
+
+
+
+
+    text +=
+
+    "Игрок 2 выбрал: " +
+
+    game.finalVotes.player2.answer;
+
+
+
+
+
+
+
+
+
+    if(
+
+        game.finalVotes.player1.answer==="ai" ||
+
+        game.finalVotes.player2.answer==="ai"
+
+    ){
+
+
+        text +=
+
+        "\n\n🤖 Кто-то заметил ИИ!";
 
 
     }
+
+    else{
+
+
+        text +=
+
+        "\n\n🤯 ИИ удалось обмануть игроков!";
+
+
+    }
+
+
+
+
+
+
+
+    el.textContent =
+    text;
 
 
 
@@ -882,10 +968,10 @@ function showResultScreen(game){
 // ============================================================
 
 
-function shuffle(arr){
+function shuffle(array){
 
 
-    return arr
+    return array
     .slice()
     .sort(
         ()=>Math.random()-0.5
@@ -903,5 +989,5 @@ function shuffle(arr){
 
 
 console.log(
-"🎮 Draw game engine loaded"
+"🎮 Am I AI game engine loaded"
 );
