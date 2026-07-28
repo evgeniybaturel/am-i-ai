@@ -3,10 +3,10 @@
 // AM I AI - Бесплатная генерация
 // ============================================================
 
-const HF_API_KEY = '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'; // Получить на huggingface.co/settings/tokens
+const HF_API_KEY = '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';
 
 // ============================================================
-// ГЕНЕРАЦИЯ ЗАДАНИЯ (упрощённая)
+// ГЕНЕРАЦИЯ ЗАДАНИЯ
 // ============================================================
 async function generateTask() {
     const tasks = [
@@ -19,7 +19,12 @@ async function generateTask() {
         "Нарисуйте пиццу с ананасами",
         "Нарисуйте динозавра в очках",
         "Нарисуйте ракету летящую в космос",
-        "Нарисуйте супергероя с плащом"
+        "Нарисуйте супергероя с плащом",
+        "Нарисуйте цветок с большими лепестками",
+        "Нарисуйте облако с дождём",
+        "Нарисуйте рыбу с короной",
+        "Нарисуйте замок с флагами",
+        "Нарисуйте звезду с глазами"
     ];
     return tasks[Math.floor(Math.random() * tasks.length)];
 }
@@ -29,19 +34,18 @@ async function generateTask() {
 // ============================================================
 async function generateAIDrawing(task) {
     try {
-        // 1. Пробуем через Hugging Face
         const result = await generateWithHuggingFace(task);
         if (result) return result;
     } catch (e) {
         console.log('Hugging Face failed:', e.message);
     }
     
-    // 2. Fallback - простой генератор
+    console.log('Using fallback drawing generator');
     return fakeHumanDrawing();
 }
 
 async function generateWithHuggingFace(task) {
-    if (!HF_API_KEY || HF_API_KEY === 'hf_ваш_ключ_здесь') {
+    if (!HF_API_KEY) {
         console.warn('❌ HF_API_KEY не настроен');
         return null;
     }
@@ -54,7 +58,9 @@ async function generateWithHuggingFace(task) {
     
     const model = models[Math.floor(Math.random() * models.length)];
     
-    const prompt = `black and white simple sketch of ${task}, rough drawing, children's style, uneven lines, simple shapes`;
+    const prompt = `black and white simple sketch of ${task}, rough drawing, children's style, uneven lines, simple shapes, hand-drawn`;
+    
+    console.log(`🤖 Отправляем запрос в Hugging Face (${model})...`);
     
     const response = await fetch(
         `https://api-inference.huggingface.co/models/${model}`,
@@ -67,7 +73,7 @@ async function generateWithHuggingFace(task) {
             body: JSON.stringify({
                 inputs: prompt,
                 parameters: {
-                    negative_prompt: "realistic, detailed, perfect, polished, 3d, photo, colorful, professional",
+                    negative_prompt: "realistic, detailed, perfect, polished, 3d, photo, colorful, professional, ugly",
                     num_inference_steps: 20,
                     guidance_scale: 7.0,
                     width: 512,
@@ -97,13 +103,12 @@ function blobToBase64(blob) {
 }
 
 // ============================================================
-// FALLBACK ГЕНЕРАТОР (улучшенная версия)
+// FALLBACK ГЕНЕРАТОР
 // ============================================================
 function fakeHumanDrawing() {
     const colors = ['#111111', '#222222', '#333333', '#1a1a2e'];
     const color = colors[Math.floor(Math.random() * colors.length)];
     
-    // Генерируем разные фигуры в зависимости от задания
     const shapes = [];
     const numShapes = 5 + Math.floor(Math.random() * 8);
     
@@ -120,8 +125,8 @@ function fakeHumanDrawing() {
             for (let j = 0; j < numPoints; j++) {
                 const angle = (j / numPoints) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
                 points.push({
-                    x: cx + Math.cos(angle) * radius * (0.7 + Math.random() * 0.3),
-                    y: cy + Math.sin(angle) * radius * (0.7 + Math.random() * 0.3)
+                    x: Math.round(cx + Math.cos(angle) * radius * (0.7 + Math.random() * 0.3)),
+                    y: Math.round(cy + Math.sin(angle) * radius * (0.7 + Math.random() * 0.3))
                 });
             }
             shapes.push({
@@ -134,8 +139,8 @@ function fakeHumanDrawing() {
         } else if (type === 'circle') {
             shapes.push({
                 type: 'circle',
-                x: 100 + Math.random() * 300,
-                y: 100 + Math.random() * 300,
+                x: Math.round(100 + Math.random() * 300),
+                y: Math.round(100 + Math.random() * 300),
                 radius: 20 + Math.random() * 60,
                 color: colors[Math.floor(Math.random() * colors.length)],
                 fill: Math.random() > 0.6,
@@ -144,10 +149,10 @@ function fakeHumanDrawing() {
         } else {
             shapes.push({
                 type: 'line',
-                x1: 50 + Math.random() * 400,
-                y1: 50 + Math.random() * 400,
-                x2: 50 + Math.random() * 400,
-                y2: 50 + Math.random() * 400,
+                x1: Math.round(50 + Math.random() * 400),
+                y1: Math.round(50 + Math.random() * 400),
+                x2: Math.round(50 + Math.random() * 400),
+                y2: Math.round(50 + Math.random() * 400),
                 color: color,
                 width: 3 + Math.random() * 4
             });
