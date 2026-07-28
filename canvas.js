@@ -191,6 +191,7 @@ async function finishDrawing() {
 
     if (!currentRoomId || !myRole) return;
 
+    // Сохраняем рисунок в Firebase
     await database
         .ref("rooms/" + currentRoomId + "/game/drawings/" + myRole)
         .set({
@@ -199,6 +200,7 @@ async function finishDrawing() {
             time: Date.now()
         });
 
+    // Переключаемся на экран ожидания
     if (typeof openWait === "function") {
         openWait();
     }
