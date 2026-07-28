@@ -1,7 +1,7 @@
 // ============================================================
 // ROOM SYSTEM
-// NOT A HUMAN: DRAW
-// Persistent multiplayer rooms
+// AM I AI
+// Multiplayer persistent rooms
 // ============================================================
 
 
@@ -31,7 +31,7 @@ function createPlayerId(){
 
     let id =
     localStorage.getItem(
-        "notHumanDrawPlayerId"
+        "amIAI_playerId"
     );
 
 
@@ -44,7 +44,7 @@ function createPlayerId(){
 
 
     id =
-    "player_" +
+    "user_" +
     Math.random()
     .toString(36)
     .substring(2,10);
@@ -54,7 +54,7 @@ function createPlayerId(){
 
 
     localStorage.setItem(
-        "notHumanDrawPlayerId",
+        "amIAI_playerId",
         id
     );
 
@@ -88,7 +88,7 @@ function generateRoomCode(){
 
 
 
-    let code = "";
+    let code="";
 
 
 
@@ -98,8 +98,7 @@ function generateRoomCode(){
         code +=
         chars[
             Math.floor(
-                Math.random() *
-                chars.length
+                Math.random()*chars.length
             )
         ];
 
@@ -151,24 +150,6 @@ async function createRoom(){
 
 
 
-    localStorage.setItem(
-        "notHumanDrawRoom",
-        currentRoomId
-    );
-
-
-
-    localStorage.setItem(
-        "notHumanDrawRole",
-        myRole
-    );
-
-
-
-
-
-
-
 
     await database
     .ref(
@@ -200,6 +181,7 @@ async function createRoom(){
         status:
         "waiting"
 
+
     });
 
 
@@ -209,7 +191,14 @@ async function createRoom(){
 
 
 
+    saveRoom();
+
+
+
+
+
     setupDisconnect();
+
 
 
 
@@ -219,11 +208,14 @@ async function createRoom(){
 
 
 
+
     openLobby();
 
 
 
+
     listenRoom();
+
 
 
 
@@ -264,17 +256,8 @@ async function joinRoom(){
 
 
 
-
-    if(!code){
-
-        alert(
-            "Введите код комнаты"
-        );
-
+    if(!code)
         return;
-
-    }
-
 
 
 
@@ -285,16 +268,14 @@ async function joinRoom(){
 
     const ref =
     database.ref(
-        "rooms/" +
-        code
+        "rooms/" + code
     );
 
 
 
 
 
-
-    const snapshot =
+    const snap =
     await ref.once(
         "value"
     );
@@ -305,7 +286,7 @@ async function joinRoom(){
 
 
 
-    if(!snapshot.exists()){
+    if(!snap.exists()){
 
 
         alert(
@@ -324,8 +305,7 @@ async function joinRoom(){
 
 
     const room =
-    snapshot.val();
-
+    snap.val();
 
 
 
@@ -343,41 +323,36 @@ async function joinRoom(){
 
     if(
         room.player1 &&
-        room.player1.id === myPlayerId
+        room.player1.id===myPlayerId
     ){
 
 
-        myRole =
-        "player1";
+        myRole="player1";
 
 
     }
-
 
     else if(
+
         room.player2 &&
-        room.player2.id === myPlayerId
+        room.player2.id===myPlayerId
+
     ){
 
 
-        myRole =
-        "player2";
+        myRole="player2";
 
 
     }
-
 
     else{
 
 
-
-        if(
-            room.player2
-        ){
+        if(room.player2){
 
 
             alert(
-                "Комната уже заполнена"
+                "Комната заполнена"
             );
 
 
@@ -389,11 +364,7 @@ async function joinRoom(){
 
 
 
-
-
-        myRole =
-        "player2";
-
+        myRole="player2";
 
 
 
@@ -408,9 +379,7 @@ async function joinRoom(){
             id:
             myPlayerId,
 
-
             online:true,
-
 
             lastSeen:
             Date.now()
@@ -426,7 +395,6 @@ async function joinRoom(){
 
 
 
-
     currentRoomId =
     code;
 
@@ -434,21 +402,7 @@ async function joinRoom(){
 
 
 
-
-
-    localStorage.setItem(
-        "notHumanDrawRoom",
-        code
-    );
-
-
-
-    localStorage.setItem(
-        "notHumanDrawRole",
-        myRole
-    );
-
-
+    saveRoom();
 
 
 
@@ -467,9 +421,7 @@ async function joinRoom(){
 
 
 
-
     setupDisconnect();
-
 
 
 
@@ -479,7 +431,11 @@ async function joinRoom(){
 
 
 
+
+
     listenRoom();
+
+
 
 
 
@@ -494,24 +450,51 @@ async function joinRoom(){
 
 
 // ============================================================
-// RESTORE AFTER F5
+// SAVE / RESTORE
 // ============================================================
+
+
+function saveRoom(){
+
+
+
+    localStorage.setItem(
+        "amIAI_room",
+        currentRoomId
+    );
+
+
+
+    localStorage.setItem(
+        "amIAI_role",
+        myRole
+    );
+
+
+}
+
+
+
+
+
+
+
 
 
 async function restoreRoom(){
 
 
 
-    const roomId =
+    const room =
     localStorage.getItem(
-        "notHumanDrawRoom"
+        "amIAI_room"
     );
 
 
 
     const role =
     localStorage.getItem(
-        "notHumanDrawRole"
+        "amIAI_role"
     );
 
 
@@ -520,7 +503,7 @@ async function restoreRoom(){
 
 
     if(
-        !roomId ||
+        !room ||
         !role
     )
         return;
@@ -531,12 +514,10 @@ async function restoreRoom(){
 
 
 
-
-    const snapshot =
+    const snap =
     await database
     .ref(
-        "rooms/" +
-        roomId
+        "rooms/" + room
     )
     .once(
         "value"
@@ -548,11 +529,10 @@ async function restoreRoom(){
 
 
 
+    if(!snap.exists()){
 
-    if(!snapshot.exists()){
 
-
-        clearRoomStorage();
+        clearRoom();
 
 
         return;
@@ -566,8 +546,9 @@ async function restoreRoom(){
 
 
 
+
     currentRoomId =
-    roomId;
+    room;
 
 
 
@@ -588,7 +569,7 @@ async function restoreRoom(){
     await database
     .ref(
         "rooms/" +
-        roomId +
+        room +
         "/" +
         role
     )
@@ -607,18 +588,22 @@ async function restoreRoom(){
 
 
 
+    showCreatedRoom(
+        room
+    );
+
+
+
+
 
     openLobby();
 
 
 
-    showCreatedRoom(
-        roomId
-    );
-
 
 
     listenRoom();
+
 
 
 
@@ -633,7 +618,7 @@ async function restoreRoom(){
 
 
 // ============================================================
-// ROOM LISTENER
+// LISTENER
 // ============================================================
 
 
@@ -647,7 +632,6 @@ function listenRoom(){
 
 
     roomListenerStarted=true;
-
 
 
 
@@ -693,7 +677,7 @@ function listenRoom(){
 
 
             if(
-                typeof startGame === "function"
+                typeof startGame==="function"
             ){
 
 
@@ -705,34 +689,6 @@ function listenRoom(){
 
 
         }
-
-
-
-
-
-
-        else{
-
-
-            const wait =
-            document.querySelector(
-                ".waiting"
-            );
-
-
-
-            if(wait)
-
-
-                wait.textContent =
-                "⏳ Ожидание второго игрока...";
-
-
-
-        }
-
-
-
 
 
 
@@ -772,10 +728,12 @@ function setupDisconnect(){
 
     database
     .ref(
+
         "rooms/" +
         currentRoomId +
         "/" +
         myRole
+
     )
     .onDisconnect()
     .update({
@@ -800,7 +758,7 @@ function setupDisconnect(){
 
 
 // ============================================================
-// LEAVE ROOM
+// LEAVE
 // ============================================================
 
 
@@ -820,8 +778,7 @@ async function leaveRoom(){
 
 
 
-
-    const roomRef =
+    const ref =
     database.ref(
         "rooms/" +
         currentRoomId
@@ -832,7 +789,8 @@ async function leaveRoom(){
 
 
 
-    await roomRef
+
+    await ref
     .child(
         myRole
     )
@@ -844,8 +802,8 @@ async function leaveRoom(){
 
 
 
-    const snapshot =
-    await roomRef.once(
+    const snap =
+    await ref.once(
         "value"
     );
 
@@ -856,7 +814,7 @@ async function leaveRoom(){
 
 
     const room =
-    snapshot.val();
+    snap.val();
 
 
 
@@ -871,9 +829,7 @@ async function leaveRoom(){
     ){
 
 
-
-        await roomRef.remove();
-
+        await ref.remove();
 
 
     }
@@ -883,8 +839,7 @@ async function leaveRoom(){
 
 
 
-
-    clearRoomStorage();
+    clearRoom();
 
 
 
@@ -896,8 +851,6 @@ async function leaveRoom(){
     myRole=null;
 
     roomListenerStarted=false;
-
-
 
 
 
@@ -917,23 +870,18 @@ async function leaveRoom(){
 
 
 
-// ============================================================
-// HELPERS
-// ============================================================
-
-
-function clearRoomStorage(){
+function clearRoom(){
 
 
 
     localStorage.removeItem(
-        "notHumanDrawRoom"
+        "amIAI_room"
     );
 
 
 
     localStorage.removeItem(
-        "notHumanDrawRole"
+        "amIAI_role"
     );
 
 
@@ -947,22 +895,26 @@ function clearRoomStorage(){
 
 
 
+// ============================================================
+// UI
+// ============================================================
+
+
 function showCreatedRoom(code){
 
 
 
     const el =
     document.getElementById(
-        "created-room"
+        "room-display"
     );
 
 
 
     if(el)
 
-
         el.textContent =
-        "Код: " + code;
+        code;
 
 
 
@@ -989,10 +941,8 @@ function showRoomReady(){
 
     if(wait)
 
-
         wait.textContent =
-        "✅ Игрок подключился. Начинаем рисование...";
-
+        "✅ Игрок найден. Начинаем...";
 
 
 }
@@ -1016,49 +966,50 @@ document
 ()=>{
 
 
-    document
-    .getElementById(
-        "create-room-btn"
-    )
-    ?.addEventListener(
-        "click",
-        createRoom
-    );
 
-
-
-
-
-    document
-    .getElementById(
-        "join-room-btn"
-    )
-    ?.addEventListener(
-        "click",
-        joinRoom
-    );
+document
+.getElementById(
+"create-room-btn"
+)
+?.addEventListener(
+"click",
+createRoom
+);
 
 
 
 
 
 
-    document
-    .getElementById(
-        "leave-room-btn"
-    )
-    ?.addEventListener(
-        "click",
-        leaveRoom
-    );
+document
+.getElementById(
+"join-room-btn"
+)
+?.addEventListener(
+"click",
+joinRoom
+);
 
 
 
 
 
 
+document
+.getElementById(
+"leave-room-btn"
+)
+?.addEventListener(
+"click",
+leaveRoom
+);
 
-    restoreRoom();
+
+
+
+
+
+restoreRoom();
 
 
 
@@ -1073,5 +1024,5 @@ document
 
 
 console.log(
-"🏠 Room system persistent loaded"
+"🏠 Am I AI room system loaded"
 );
