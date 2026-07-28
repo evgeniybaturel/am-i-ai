@@ -1,14 +1,37 @@
 // ============================================================
-// API ENGINE with Cloudflare Worker (БЕЗОПАСНО)
-// AM I AI - Hugging Face через Cloudflare Worker
+// API ENGINE with Hugging Face
+// AM I AI - Только Hugging Face
 // ============================================================
 
-// ============================================================
-// КОНФИГУРАЦИЯ
-// ============================================================
+// ⚠️ Этот ключ был опубликован в открытом GitHub-репозитории, поэтому его
+// стоит считать скомпрометированным (GitHub/Hugging Face могли уже отозвать
+// его автоматически). Сгенерируйте новый токен на huggingface.co/settings/tokens
+// и подставьте сюда. Для продакшена ключ лучше не хранить в клиентском коде
+// вообще, а прятать за небольшим серверным прокси.
+const HF_API_KEY = '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';
 
-// Адрес вашего Cloudflare Worker
-const WORKER_URL = 'https://orange-sunset-4b58.evgeniybaturel.workers.dev/';
+let hfClient = null;
+
+function getHuggingFaceClient() {
+    if (hfClient) return hfClient;
+
+    // Разные версии UMD-сборки @huggingface/inference публикуют клиент
+    // под разными именами — проверяем все известные варианты.
+    const ns = (typeof HuggingFace !== 'undefined' && HuggingFace) || (typeof window !== 'undefined' && window.HuggingFace) || {};
+    const ClientClass =
+        ns.InferenceClient ||
+        ns.HfInference ||
+        (typeof window !== 'undefined' && (window.InferenceClient || window.HfInference));
+
+    if (!ClientClass) {
+        console.error('❌ Библиотека Hugging Face не загружена!');
+        return null;
+    }
+
+    hfClient = new ClientClass(HF_API_KEY);
+    console.log('✅ Hugging Face клиент инициализирован');
+    return hfClient;
+}
 
 // ============================================================
 // ГЕНЕРАЦИЯ ЗАДАНИЯ
@@ -91,112 +114,85 @@ async function generateTask() {
 }
 
 // ============================================================
-// ГЕНЕРАЦИЯ РИСУНКА ЧЕРЕЗ CLOUDFLARE WORKER
+// ГЕНЕРАЦИЯ РИСУНКА ЧЕРЕЗ HUGGING FACE
 // ============================================================
-
 async function generateAIDrawing(task) {
     console.log('🤖 Генерируем рисунок для:', task);
 
-    try {
-        // Отправляем задание на Cloudflare Worker
-        const response = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                task: task
-            })
-        });
-
-        // Проверяем ответ
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `Ошибка ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        // Если Worker вернул base64 изображение
-        if (data.image) {
-            return data.image; // Это уже base64 строка с data:image/png
-        } else {
-            throw new Error('Не удалось получить изображение от сервера');
-        }
-
-    } catch (error) {
-        console.error('❌ Ошибка генерации:', error);
-        throw new Error(error.message || 'Не удалось сгенерировать рисунок. Попробуйте ещё раз.');
-    }
-}
-
-// ============================================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (если нужны на клиенте)
-// ============================================================
-
-// Функция для отображения изображения на странице
-function displayDrawing(base64Image, containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.error('Контейнер не найден:', containerId);
-        return;
+    const client = getHuggingFaceClient();
+    if (!client) {
+        throw new Error('Клиент Hugging Face не доступен — не загрузилась библиотека');
     }
 
-    // Создаём элемент img
-    const img = document.createElement('img');
-    img.src = base64Image;
-    img.alt = 'Сгенерированный рисунок';
-    img.style.maxWidth = '100%';
-    img.style.height = 'auto';
-    img.style.borderRadius = '8px';
+    const prompt = `black and white simple sketch of ${task}, rough drawing, children's style, uneven lines, simple shapes, hand-drawn`;
+    const negativePrompt = "realistic, detailed, perfect, polished, 3d, photo, colorful, professional";
 
-    // Очищаем контейнер и добавляем изображение
-    container.innerHTML = '';
-    container.appendChild(img);
-}
-
-// Функция для показа индикатора загрузки
-function showLoading(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    container.innerHTML = `
-        <div style="display: flex; justify-content: center; align-items: center; padding: 20px;">
-            <div style="
-                width: 40px;
-                height: 40px;
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #3498db;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            "></div>
-            <span style="margin-left: 12px;">Генерация...</span>
-        </div>
-    `;
-
-    // Добавляем стили для анимации, если их нет
-    if (!document.getElementById('loading-styles')) {
-        const style = document.createElement('style');
-        style.id = 'loading-styles';
-        style.textContent = `
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
+    // stabilityai/stable-diffusion-2-1 и runwayml/stable-diffusion-v1-5 больше
+    // не обслуживаются бесплатным Inference API у Hugging Face (runwayml
+    // вообще убрали с Hub). Ниже — модели, которые сейчас реально доступны
+    // через provider: 'hf-inference'. FLUX.1-schnell пробуем первым — он
+    // быстрый и не требует негативного промпта/guidance.
+    const attempts = [
+        {
+            model: 'black-forest-labs/FLUX.1-schnell',
+            provider: 'hf-inference',
+            parameters: { num_inference_steps: 4 }
+        },
+        {
+            model: 'stabilityai/stable-diffusion-xl-base-1.0',
+            provider: 'hf-inference',
+            parameters: {
+                negative_prompt: negativePrompt,
+                num_inference_steps: 20,
+                guidance_scale: 7.0
             }
-        `;
-        document.head.appendChild(style);
+        }
+    ];
+
+    let lastError = null;
+
+    for (const attempt of attempts) {
+        try {
+            console.log(`📡 Отправка запроса в ${attempt.model}...`);
+
+            const response = await client.textToImage({
+                model: attempt.model,
+                provider: attempt.provider,
+                inputs: prompt,
+                parameters: attempt.parameters
+            });
+
+            // Конвертируем ответ в base64
+            if (response instanceof Blob) {
+                return await blobToBase64(response);
+            } else if (response instanceof ArrayBuffer) {
+                const blob = new Blob([response], { type: 'image/png' });
+                return await blobToBase64(blob);
+            }
+
+        } catch (error) {
+            console.warn(`❌ ${attempt.model} не сработал:`, error?.message || error);
+            lastError = error;
+        }
     }
+
+    const message = String(lastError?.message || '');
+    if (/401|403|credential|token|unauthorized/i.test(message)) {
+        throw new Error('Токен Hugging Face недействителен или отозван — создайте новый на huggingface.co/settings/tokens');
+    }
+    throw new Error('Все модели Hugging Face сейчас недоступны. Попробуйте ещё раз через минуту.');
 }
 
-// ============================================================
-// ЭКСПОРТ ФУНКЦИЙ
-// ============================================================
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
 
-// Экспортируем для использования в других частях приложения
 window.generateTask = generateTask;
 window.generateAIDrawing = generateAIDrawing;
-window.displayDrawing = displayDrawing;
-window.showLoading = showLoading;
 
-console.log('🤖 Am I AI API loaded (через Cloudflare Worker)');
-console.log('🔗 Worker URL:', WORKER_URL);
+console.log('🤖 Am I AI API loaded (только Hugging Face)');
