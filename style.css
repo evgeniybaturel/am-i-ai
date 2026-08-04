@@ -502,46 +502,6 @@ button:focus-visible,
     transform: scale(1.14);
 }
 
-.tool-controls {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-.size-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-on-ink-dim);
-    white-space: nowrap;
-}
-#size-picker {
-    flex: 1;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 2px;
-    background: var(--line-ink-strong);
-    border-radius: 2px;
-}
-#size-picker::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--paper);
-    cursor: pointer;
-    border: 3px solid var(--ink);
-    box-shadow: 0 0 0 1px var(--line-ink-strong);
-}
-#size-picker::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--paper);
-    cursor: pointer;
-    border: 3px solid var(--ink);
-}
-
 .action-buttons {
     display: flex;
     gap: 10px;

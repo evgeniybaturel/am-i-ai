@@ -10,7 +10,7 @@ let drawing = false;
 let lastX = 0;
 let lastY = 0;
 let currentColor = "#1a1a1a";
-let currentSize = 5;
+const BRUSH_SIZE = 4; // фиксированная толщина линии — одинаковая у всех игроков и совпадает с тем, что просим у ИИ
 let canvasReady = false;
 let drawingFinished = false;
 
@@ -39,10 +39,6 @@ function initCanvas() {
             document.querySelectorAll(".color-btn").forEach(item => item.classList.remove("active"));
             button.classList.add("active");
         });
-    });
-
-    document.getElementById("size-picker")?.addEventListener("input", e => {
-        currentSize = Number(e.target.value);
     });
 
     document.getElementById("clear-btn")?.addEventListener("click", clearCanvas);
@@ -117,7 +113,7 @@ function draw(e) {
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(pos.x, pos.y);
     ctx.strokeStyle = currentColor;
-    ctx.lineWidth = currentSize;
+    ctx.lineWidth = BRUSH_SIZE;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.stroke();
