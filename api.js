@@ -6,7 +6,7 @@
 // ⚠️ После деплоя прокси (см. cf-worker/DEPLOY.md) вставьте сюда его адрес.
 // Ключ Hugging Face теперь хранится только на сервере прокси и в браузер
 // никогда не попадает.
-const PROXY_URL = 'https://am-i-ai-proxy.evgeniybaturel.workers.dev';
+const PROXY_URL = 'https://am-i-ai-proxy.YOUR-SUBDOMAIN.workers.dev';
 
 // ============================================================
 // ГЕНЕРАЦИЯ ЗАДАНИЯ
@@ -99,76 +99,36 @@ async function generateAIDrawing(task) {
     }
 
     const prompt = `black and white simple sketch of ${task}, rough drawing, children's style, uneven lines, simple shapes, hand-drawn`;
-    const negativePrompt = "realistic, detailed, perfect, polished, 3d, photo, colorful, professional";
 
-    // stabilityai/stable-diffusion-2-1 и runwayml/stable-diffusion-v1-5 больше
-    // не обслуживаются бесплатным Inference API у Hugging Face (runwayml
-    // вообще убрали с Hub). Ниже — модели, которые сейчас реально доступны
-    // через provider: 'hf-inference'. FLUX.1-schnell пробуем первым — он
-    // быстрый и не требует негативного промпта/guidance.
-    const attempts = [
-        {
-            model: 'black-forest-labs/FLUX.1-schnell',
-            provider: 'hf-inference',
-            parameters: { num_inference_steps: 4 }
-        },
-        {
-            model: 'stabilityai/stable-diffusion-xl-base-1.0',
-            provider: 'hf-inference',
-            parameters: {
-                negative_prompt: negativePrompt,
-                num_inference_steps: 20,
-                guidance_scale: 7.0
+    try {
+        const res = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+        });
+
+        if (!res.ok) {
+            const errBody = await res.text();
+            let readable = errBody;
+            try {
+                const parsed = JSON.parse(errBody);
+                readable = parsed.error || parsed.message || errBody;
+            } catch {
+                // тело не JSON — оставляем как есть
             }
+            throw new Error(`[${res.status}] ${readable || 'пустой ответ'}`);
         }
-    ];
 
-    let lastError = null;
+        const blob = await res.blob();
+        return await blobToBase64(blob);
 
-    for (const attempt of attempts) {
-        try {
-            console.log(`📡 Отправка запроса через прокси в ${attempt.model}...`);
-
-            const res = await fetch(PROXY_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: attempt.model,
-                    provider: attempt.provider,
-                    inputs: prompt,
-                    parameters: attempt.parameters
-                })
-            });
-
-            if (!res.ok) {
-                const errBody = await res.text();
-                let readable = errBody;
-                try {
-                    const parsed = JSON.parse(errBody);
-                    readable = parsed.error || parsed.message || errBody;
-                } catch {
-                    // тело не JSON — оставляем как есть
-                }
-                throw new Error(`[${res.status}] ${readable || 'пустой ответ'}`);
-            }
-
-            const blob = await res.blob();
-            return await blobToBase64(blob);
-
-        } catch (error) {
-            console.warn(`❌ ${attempt.model} не сработал:`, error?.message || error);
-            lastError = error;
+    } catch (error) {
+        const message = String(error?.message || '');
+        if (/Failed to fetch|NetworkError|CORS/i.test(message)) {
+            throw new Error('Не удалось достучаться до прокси-сервера — проверьте PROXY_URL в api.js и ALLOWED_ORIGIN в worker.js');
         }
+        throw new Error(`Не удалось сгенерировать рисунок. Подробности: ${message || 'нет ответа от сервера'}`);
     }
-
-    const message = String(lastError?.message || '');
-    if (/401|403|credential|token|unauthorized/i.test(message)) {
-        throw new Error('Токен Hugging Face на сервере прокси недействителен или отозван');
-    }
-    if (/Failed to fetch|NetworkError|CORS/i.test(message)) {
-        throw new Error('Не удалось достучаться до прокси-сервера — проверьте PROXY_URL в api.js и ALLOWED_ORIGIN в worker.js');
-    }
-    throw new Error(`Не удалось сгенерировать рисунок. Подробности: ${message || 'нет ответа от сервера'}`);
 }
 
 function blobToBase64(blob) {
