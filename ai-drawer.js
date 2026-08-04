@@ -1,5 +1,5 @@
 // ============================================================
-// AI DRAWER - Использует Hugging Face
+// AI DRAWER — рисунок генерируется через Cloudflare Workers AI
 // AM I AI
 // ============================================================
 
@@ -13,7 +13,7 @@ async function startAIDrawing(task) {
     updateProgress(10);
 
     try {
-        // Генерируем рисунок через Hugging Face
+        // Генерируем рисунок через воркер (Cloudflare Workers AI)
         const imageData = await generateAIDrawing(task);
         
         if (!imageData) {
