@@ -6,7 +6,7 @@
 // ⚠️ После деплоя прокси (см. cf-worker/DEPLOY.md) вставьте сюда его адрес.
 // Ключ Hugging Face теперь хранится только на сервере прокси и в браузер
 // никогда не попадает.
-const PROXY_URL = 'https://am-i-ai-proxy.evgeniybaturel.workers.dev';
+const PROXY_URL = 'https://am-i-ai-proxy.YOUR-SUBDOMAIN.workers.dev';
 
 // ============================================================
 // ГЕНЕРАЦИЯ ЗАДАНИЯ
@@ -142,7 +142,14 @@ async function generateAIDrawing(task) {
 
             if (!res.ok) {
                 const errBody = await res.text();
-                throw new Error(errBody || `Прокси вернул ошибку ${res.status}`);
+                let readable = errBody;
+                try {
+                    const parsed = JSON.parse(errBody);
+                    readable = parsed.error || parsed.message || errBody;
+                } catch {
+                    // тело не JSON — оставляем как есть
+                }
+                throw new Error(`[${res.status}] ${readable || 'пустой ответ'}`);
             }
 
             const blob = await res.blob();
@@ -158,7 +165,10 @@ async function generateAIDrawing(task) {
     if (/401|403|credential|token|unauthorized/i.test(message)) {
         throw new Error('Токен Hugging Face на сервере прокси недействителен или отозван');
     }
-    throw new Error('Все модели Hugging Face сейчас недоступны. Попробуйте ещё раз через минуту.');
+    if (/Failed to fetch|NetworkError|CORS/i.test(message)) {
+        throw new Error('Не удалось достучаться до прокси-сервера — проверьте PROXY_URL в api.js и ALLOWED_ORIGIN в worker.js');
+    }
+    throw new Error(`Не удалось сгенерировать рисунок. Подробности: ${message || 'нет ответа от сервера'}`);
 }
 
 function blobToBase64(blob) {
