@@ -139,23 +139,22 @@ async function generateTask() {
 }
 
 // ============================================================
-// ГЕНЕРАЦИЯ РИСУНКА ЧЕРЕЗ CLOUDFLARE WORKERS AI
+// ГЕНЕРАЦИЯ "РИСУНКА" ИИ ЧЕРЕЗ CLOUDFLARE WORKERS AI
 // ============================================================
 // Контракт с worker.js:
 //   POST { type: 'image', task, colors }
-//   -> image/png (бинарные данные)
+//   -> { strokes: [{ color, points: [[x,y], ...] }, ...] }
 //
-// Задание передаётся на воркер как есть, на русском — перевод на
-// английский и сборка финального промпта (описание стиля, палитры,
-// негативный промпт) происходит там же, на воркере, одним заходом
-// в текстовую модель. Смешивать русский текст задания с английским
-// промптом на фронтенде не стоит: диффузионная модель обучена в
-// основном на английских описаниях и на смеси языков вела себя
-// нестабильно — игнорировала часть задания или дорисовывала
-// случайные объекты.
+// ВАЖНО: воркер больше не возвращает готовую картинку от диффузионной
+// модели (FLUX/SDXL) — только JSON со списком "мазков" (координаты в
+// диапазоне 0-1000, цвет из той же палитры). Отрисовка происходит здесь,
+// на фронтенде, той же функцией canvas API, что и у настоящего игрока
+// (см. renderAIStrokes в ai-drawer.js и BRUSH_SIZE в canvas.js) — поэтому
+// толщина линии, сглаживание и цвет у ИИ и у человека совпадают не
+// "на глаз по промпту", а буквально по коду отрисовки.
 
 async function generateAIDrawing(task) {
-    console.log('🤖 Генерируем рисунок для:', task);
+    console.log('🤖 Генерируем мазки ИИ для:', task);
 
     if (!PROXY_URL || PROXY_URL.includes('YOUR-SUBDOMAIN')) {
         throw new Error('Прокси не настроен: укажите PROXY_URL в api.js после деплоя (см. cf-worker/DEPLOY.md)');
@@ -184,8 +183,11 @@ async function generateAIDrawing(task) {
             throw new Error(`[${res.status}] ${readable || 'пустой ответ'}`);
         }
 
-        const blob = await res.blob();
-        return await blobToBase64(blob);
+        const data = await res.json();
+        if (!data || !Array.isArray(data.strokes) || data.strokes.length === 0) {
+            throw new Error('Пустой ответ от ИИ (нет мазков)');
+        }
+        return data.strokes;
 
     } catch (error) {
         const message = String(error?.message || '');
@@ -194,15 +196,6 @@ async function generateAIDrawing(task) {
         }
         throw new Error(`Не удалось сгенерировать рисунок. Подробности: ${message || 'нет ответа от сервера'}`);
     }
-}
-
-function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
 }
 
 window.generateTask = generateTask;
