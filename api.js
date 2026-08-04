@@ -3,35 +3,10 @@
 // AM I AI - Только Hugging Face
 // ============================================================
 
-// ⚠️ Этот ключ был опубликован в открытом GitHub-репозитории, поэтому его
-// стоит считать скомпрометированным (GitHub/Hugging Face могли уже отозвать
-// его автоматически). Сгенерируйте новый токен на huggingface.co/settings/tokens
-// и подставьте сюда. Для продакшена ключ лучше не хранить в клиентском коде
-// вообще, а прятать за небольшим серверным прокси.
-const HF_API_KEY = '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';
-
-let hfClient = null;
-
-function getHuggingFaceClient() {
-    if (hfClient) return hfClient;
-
-    // Разные версии UMD-сборки @huggingface/inference публикуют клиент
-    // под разными именами — проверяем все известные варианты.
-    const ns = (typeof HuggingFace !== 'undefined' && HuggingFace) || (typeof window !== 'undefined' && window.HuggingFace) || {};
-    const ClientClass =
-        ns.InferenceClient ||
-        ns.HfInference ||
-        (typeof window !== 'undefined' && (window.InferenceClient || window.HfInference));
-
-    if (!ClientClass) {
-        console.error('❌ Библиотека Hugging Face не загружена!');
-        return null;
-    }
-
-    hfClient = new ClientClass(HF_API_KEY);
-    console.log('✅ Hugging Face клиент инициализирован');
-    return hfClient;
-}
+// ⚠️ После деплоя прокси (см. cf-worker/DEPLOY.md) вставьте сюда его адрес.
+// Ключ Hugging Face теперь хранится только на сервере прокси и в браузер
+// никогда не попадает.
+const PROXY_URL = 'https://am-i-ai-proxy.YOUR-SUBDOMAIN.workers.dev';
 
 // ============================================================
 // ГЕНЕРАЦИЯ ЗАДАНИЯ
@@ -119,9 +94,8 @@ async function generateTask() {
 async function generateAIDrawing(task) {
     console.log('🤖 Генерируем рисунок для:', task);
 
-    const client = getHuggingFaceClient();
-    if (!client) {
-        throw new Error('Клиент Hugging Face не доступен — не загрузилась библиотека');
+    if (!PROXY_URL || PROXY_URL.includes('YOUR-SUBDOMAIN')) {
+        throw new Error('Прокси не настроен: укажите PROXY_URL в api.js после деплоя (см. cf-worker/DEPLOY.md)');
     }
 
     const prompt = `black and white simple sketch of ${task}, rough drawing, children's style, uneven lines, simple shapes, hand-drawn`;
@@ -153,22 +127,26 @@ async function generateAIDrawing(task) {
 
     for (const attempt of attempts) {
         try {
-            console.log(`📡 Отправка запроса в ${attempt.model}...`);
+            console.log(`📡 Отправка запроса через прокси в ${attempt.model}...`);
 
-            const response = await client.textToImage({
-                model: attempt.model,
-                provider: attempt.provider,
-                inputs: prompt,
-                parameters: attempt.parameters
+            const res = await fetch(PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: attempt.model,
+                    provider: attempt.provider,
+                    inputs: prompt,
+                    parameters: attempt.parameters
+                })
             });
 
-            // Конвертируем ответ в base64
-            if (response instanceof Blob) {
-                return await blobToBase64(response);
-            } else if (response instanceof ArrayBuffer) {
-                const blob = new Blob([response], { type: 'image/png' });
-                return await blobToBase64(blob);
+            if (!res.ok) {
+                const errBody = await res.text();
+                throw new Error(errBody || `Прокси вернул ошибку ${res.status}`);
             }
+
+            const blob = await res.blob();
+            return await blobToBase64(blob);
 
         } catch (error) {
             console.warn(`❌ ${attempt.model} не сработал:`, error?.message || error);
@@ -178,7 +156,7 @@ async function generateAIDrawing(task) {
 
     const message = String(lastError?.message || '');
     if (/401|403|credential|token|unauthorized/i.test(message)) {
-        throw new Error('Токен Hugging Face недействителен или отозван — создайте новый на huggingface.co/settings/tokens');
+        throw new Error('Токен Hugging Face на сервере прокси недействителен или отозван');
     }
     throw new Error('Все модели Hugging Face сейчас недоступны. Попробуйте ещё раз через минуту.');
 }
