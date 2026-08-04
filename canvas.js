@@ -10,9 +10,7 @@ let drawing = false;
 let lastX = 0;
 let lastY = 0;
 let currentColor = "#1a1a1a";
-// Толщина кисти теперь фиксированная — и человек, и ИИ рисуют одной
-// толщиной линии, чтобы это не выдавало, кто есть кто.
-const BRUSH_SIZE = 6;
+let currentSize = 5;
 let canvasReady = false;
 let drawingFinished = false;
 
@@ -41,6 +39,10 @@ function initCanvas() {
             document.querySelectorAll(".color-btn").forEach(item => item.classList.remove("active"));
             button.classList.add("active");
         });
+    });
+
+    document.getElementById("size-picker")?.addEventListener("input", e => {
+        currentSize = Number(e.target.value);
     });
 
     document.getElementById("clear-btn")?.addEventListener("click", clearCanvas);
@@ -115,7 +117,7 @@ function draw(e) {
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(pos.x, pos.y);
     ctx.strokeStyle = currentColor;
-    ctx.lineWidth = BRUSH_SIZE;
+    ctx.lineWidth = currentSize;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.stroke();
