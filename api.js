@@ -142,21 +142,17 @@ async function generateTask() {
 // ГЕНЕРАЦИЯ РИСУНКА ЧЕРЕЗ CLOUDFLARE WORKERS AI
 // ============================================================
 // Контракт с worker.js:
-//   POST { type: 'image', prompt, negative_prompt }
+//   POST { type: 'image', task, colors }
 //   -> image/png (бинарные данные)
-
-function buildDrawingPrompt(task) {
-    return [
-        `simple sketch of exactly this and nothing else: ${task}`,
-        `flat coloring using only these colors: ${COLOR_PALETTE.join(', ')}, no gradients, no shading, no colors outside this palette`,
-        "children's hand-drawn style, uneven wobbly lines, single uniform line thickness throughout",
-        "one single subject centered on a plain white background",
-        "no scenery, no landscape, no buildings, no extra objects, no additional characters, no props that were not asked for",
-        "minimal detail, sketch quality, not a finished illustration"
-    ].join(', ');
-}
-
-const NEGATIVE_PROMPT = "background, scenery, landscape, city, buildings, house, fence, sun, sky, extra objects, multiple subjects, text, watermark, signature, frame, border, photorealistic, detailed shading, gradients, varying line width";
+//
+// Задание передаётся на воркер как есть, на русском — перевод на
+// английский и сборка финального промпта (описание стиля, палитры,
+// негативный промпт) происходит там же, на воркере, одним заходом
+// в текстовую модель. Смешивать русский текст задания с английским
+// промптом на фронтенде не стоит: диффузионная модель обучена в
+// основном на английских описаниях и на смеси языков вела себя
+// нестабильно — игнорировала часть задания или дорисовывала
+// случайные объекты.
 
 async function generateAIDrawing(task) {
     console.log('🤖 Генерируем рисунок для:', task);
@@ -165,16 +161,14 @@ async function generateAIDrawing(task) {
         throw new Error('Прокси не настроен: укажите PROXY_URL в api.js после деплоя (см. cf-worker/DEPLOY.md)');
     }
 
-    const prompt = buildDrawingPrompt(task);
-
     try {
         const res = await fetch(PROXY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 type: 'image',
-                prompt,
-                negative_prompt: NEGATIVE_PROMPT
+                task,
+                colors: COLOR_PALETTE
             })
         });
 
