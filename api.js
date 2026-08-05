@@ -1,68 +1,59 @@
 // ============================================================
-// API ENGINE with Hugging Face
-// AM I AI - Только Hugging Face
+// API ENGINE
+// AM I AI — задания + проверка догадок + изменение рисунков через ИИ
 // ============================================================
 
 // ⚠️ После деплоя прокси (см. cf-worker/DEPLOY.md) вставьте сюда его адрес.
-// Ключ Hugging Face теперь хранится только на сервере прокси и в браузер
-// никогда не попадает.
-const PROXY_URL = 'https://am-i-ai-proxy.evgeniybaturel.workers.dev';
+const PROXY_URL = 'https://am-i-ai-proxy.YOUR-SUBDOMAIN.workers.dev';
 
 // ============================================================
-// ГЕНЕРАЦИЯ ЗАДАНИЯ
+// ЗАДАНИЯ
+// task — что показываем художнику. answer — короткая эталонная
+// фраза, с которой сверяем догадку соперника (без "нарисуйте").
 // ============================================================
 
 const TASK_POOL = [
-    { ru: "Нарисуйте кота на луне", en: "a cat sitting on the moon" },
-    { ru: "Нарисуйте смешного монстра", en: "a funny silly monster" },
-    { ru: "Нарисуйте робота с антенной", en: "a robot with an antenna" },
-    { ru: "Нарисуйте дом с дымом из трубы", en: "a house with smoke coming from the chimney" },
-    { ru: "Нарисуйте дерево с качелями", en: "a tree with a swing hanging from it" },
-    { ru: "Нарисуйте машину с крыльями", en: "a car with wings" },
-    { ru: "Нарисуйте пиццу с ананасами", en: "a pizza with pineapple slices" },
-    { ru: "Нарисуйте динозавра в очках", en: "a dinosaur wearing glasses" },
-    { ru: "Нарисуйте ракету, летящую в космос", en: "a rocket flying into space" },
-    { ru: "Нарисуйте супергероя с плащом", en: "a superhero wearing a cape" },
-    { ru: "Нарисуйте осьминога в шляпе", en: "an octopus wearing a hat" },
-    { ru: "Нарисуйте дракона, пьющего чай", en: "a dragon drinking tea" },
-    { ru: "Нарисуйте улитку на скейтборде", en: "a snail riding a skateboard" },
-    { ru: "Нарисуйте слона на велосипеде", en: "an elephant riding a bicycle" },
-    { ru: "Нарисуйте призрака в носках", en: "a ghost wearing socks" },
-    { ru: "Нарисуйте робота-повара", en: "a robot chef cooking" },
-    { ru: "Нарисуйте пингвина-серфера", en: "a penguin surfing on a wave" },
-    { ru: "Нарисуйте замок из мороженого", en: "a castle made of ice cream" },
-    { ru: "Нарисуйте медведя в костюме", en: "a bear wearing a business suit" },
-    { ru: "Нарисуйте рыбу с зонтиком", en: "a fish holding an umbrella" },
-    { ru: "Нарисуйте инопланетянина на пикнике", en: "an alien having a picnic" },
-    { ru: "Нарисуйте жирафа в лифте", en: "a giraffe standing in an elevator" },
-    { ru: "Нарисуйте черепаху-супергероя", en: "a turtle dressed as a superhero" },
-    { ru: "Нарисуйте кактус в очках", en: "a cactus wearing sunglasses" },
-    { ru: "Нарисуйте лягушку-музыканта", en: "a frog playing a musical instrument" },
-    { ru: "Нарисуйте сову-детектива", en: "an owl dressed as a detective" },
-    { ru: "Нарисуйте кита в небе", en: "a whale floating in the sky" },
-    { ru: "Нарисуйте лиса-повара", en: "a fox working as a chef" },
-    { ru: "Нарисуйте паровоз с крыльями", en: "a steam train with wings" },
-    { ru: "Нарисуйте снеговика на пляже", en: "a snowman standing on a beach" },
-    { ru: "Нарисуйте панду-космонавта", en: "a panda dressed as an astronaut" },
-    { ru: "Нарисуйте единорога в дождевике", en: "a unicorn wearing a raincoat" },
-    { ru: "Нарисуйте краба-художника", en: "a crab painting on a canvas" },
-    { ru: "Нарисуйте зайца-почтальона", en: "a rabbit working as a mail carrier" },
-    { ru: "Нарисуйте бабочку-робота", en: "a robot butterfly" },
-    { ru: "Нарисуйте гриб-домик с окошком", en: "a mushroom shaped like a little house with a window" },
-    { ru: "Нарисуйте кита-подводную лодку", en: "a whale shaped like a submarine" },
-    { ru: "Нарисуйте ёжика с зонтом", en: "a hedgehog holding an umbrella" },
-    { ru: "Нарисуйте обезьяну-диджея", en: "a monkey working as a DJ" },
-    { ru: "Нарисуйте акулу на роликах", en: "a shark riding roller skates" }
+    { task: "Нарисуйте кота на луне", answer: "кот на луне" },
+    { task: "Нарисуйте смешного монстра", answer: "монстр" },
+    { task: "Нарисуйте робота с антенной", answer: "робот с антенной" },
+    { task: "Нарисуйте дом с дымом из трубы", answer: "дом с дымом из трубы" },
+    { task: "Нарисуйте дерево с качелями", answer: "дерево с качелями" },
+    { task: "Нарисуйте машину с крыльями", answer: "машина с крыльями" },
+    { task: "Нарисуйте пиццу с ананасами", answer: "пицца с ананасами" },
+    { task: "Нарисуйте динозавра в очках", answer: "динозавр в очках" },
+    { task: "Нарисуйте ракету, летящую в космос", answer: "ракета" },
+    { task: "Нарисуйте супергероя с плащом", answer: "супергерой" },
+    { task: "Нарисуйте осьминога в шляпе", answer: "осьминог в шляпе" },
+    { task: "Нарисуйте дракона, пьющего чай", answer: "дракон пьёт чай" },
+    { task: "Нарисуйте улитку на скейтборде", answer: "улитка на скейтборде" },
+    { task: "Нарисуйте слона на велосипеде", answer: "слон на велосипеде" },
+    { task: "Нарисуйте призрака в носках", answer: "призрак в носках" },
+    { task: "Нарисуйте робота-повара", answer: "робот повар" },
+    { task: "Нарисуйте пингвина-серфера", answer: "пингвин серфер" },
+    { task: "Нарисуйте замок из мороженого", answer: "замок из мороженого" },
+    { task: "Нарисуйте медведя в костюме", answer: "медведь в костюме" },
+    { task: "Нарисуйте рыбу с зонтиком", answer: "рыба с зонтиком" },
+    { task: "Нарисуйте инопланетянина на пикнике", answer: "инопланетянин на пикнике" },
+    { task: "Нарисуйте жирафа в лифте", answer: "жираф в лифте" },
+    { task: "Нарисуйте черепаху-супергероя", answer: "черепаха супергерой" },
+    { task: "Нарисуйте кактус в очках", answer: "кактус в очках" },
+    { task: "Нарисуйте лягушку-музыканта", answer: "лягушка музыкант" },
+    { task: "Нарисуйте сову-детектива", answer: "сова детектив" },
+    { task: "Нарисуйте кита в небе", answer: "кит в небе" },
+    { task: "Нарисуйте лиса-повара", answer: "лис повар" },
+    { task: "Нарисуйте паровоз с крыльями", answer: "паровоз с крыльями" },
+    { task: "Нарисуйте снеговика на пляже", answer: "снеговик на пляже" },
+    { task: "Нарисуйте панду-космонавта", answer: "панда космонавт" },
+    { task: "Нарисуйте единорога в дождевике", answer: "единорог в дождевике" },
+    { task: "Нарисуйте краба-художника", answer: "краб художник" },
+    { task: "Нарисуйте зайца-почтальона", answer: "заяц почтальон" },
+    { task: "Нарисуйте бабочку-робота", answer: "бабочка робот" },
+    { task: "Нарисуйте гриб-домик с окошком", answer: "гриб домик с окошком" },
+    { task: "Нарисуйте кита-подводную лодку", answer: "кит подводная лодка" },
+    { task: "Нарисуйте ёжика с зонтом", answer: "ёжик с зонтом" },
+    { task: "Нарисуйте обезьяну-диджея", answer: "обезьяна диджей" },
+    { task: "Нарисуйте акулу на роликах", answer: "акула на роликах" }
 ];
-
-// Быстрый поиск английской версии задания по русскому тексту —
-// используется при сборке промпта для генерации ИИ-рисунка.
-const TASK_EN_BY_RU = {};
-TASK_POOL.forEach(t => { TASK_EN_BY_RU[t.ru] = t.en; });
-
-function translateTask(task) {
-    return TASK_EN_BY_RU[task] || task;
-}
 
 function pickTask() {
     let history = [];
@@ -72,15 +63,15 @@ function pickTask() {
         history = [];
     }
 
-    let pool = TASK_POOL.filter(t => !history.includes(t.ru));
+    let pool = TASK_POOL.filter(t => !history.includes(t.task));
     if (pool.length === 0) {
         pool = TASK_POOL;
         history = [];
     }
 
-    const task = pool[Math.floor(Math.random() * pool.length)];
+    const picked = pool[Math.floor(Math.random() * pool.length)];
 
-    history.push(task.ru);
+    history.push(picked.task);
     const maxHistory = Math.min(15, TASK_POOL.length - 1);
     while (history.length > maxHistory) history.shift();
 
@@ -90,7 +81,7 @@ function pickTask() {
         // localStorage может быть недоступен (приватный режим) — не критично
     }
 
-    return task.ru;
+    return picked; // { task, answer }
 }
 
 async function generateTask() {
@@ -98,23 +89,54 @@ async function generateTask() {
 }
 
 // ============================================================
-// ГЕНЕРАЦИЯ РИСУНКА ЧЕРЕЗ HUGGING FACE
+// ПРОВЕРКА ДОГАДКИ
+// Простое нестрогое сравнение: убираем регистр/пунктуацию и
+// проверяем, что все значимые слова эталонного ответа есть в
+// догадке игрока — без жёсткого требования дословного совпадения.
 // ============================================================
-async function generateAIDrawing(task) {
-    console.log('🤖 Генерируем рисунок для:', task);
 
+const GUESS_STOPWORDS = new Set([
+    'и', 'в', 'на', 'с', 'у', 'к', 'о', 'из', 'по', 'за', 'для',
+    'как', 'это', 'а', 'но', 'что', 'где', 'же', 'то', 'от', 'до'
+]);
+
+function normalizeGuess(str) {
+    return String(str || '')
+        .toLowerCase()
+        .replace(/ё/g, 'е')
+        .replace(/[.,!?;:"'«»()\-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function checkGuess(guess, answer) {
+    const normGuess = normalizeGuess(guess);
+    const normAnswer = normalizeGuess(answer);
+    if (!normGuess || !normAnswer) return false;
+    if (normGuess === normAnswer) return true;
+
+    const keywords = normAnswer.split(' ').filter(w => w.length > 2 && !GUESS_STOPWORDS.has(w));
+    if (keywords.length === 0) return normGuess.includes(normAnswer);
+
+    return keywords.every(word => normGuess.includes(word));
+}
+
+// ============================================================
+// ИЗМЕНЕНИЕ РИСУНКА ЧЕРЕЗ ИИ (img2img)
+// ============================================================
+
+async function transformDrawing(imageDataUrl) {
     if (!PROXY_URL || PROXY_URL.includes('YOUR-SUBDOMAIN')) {
         throw new Error('Прокси не настроен: укажите PROXY_URL в api.js после деплоя (см. cf-worker/DEPLOY.md)');
     }
 
-    const englishTask = translateTask(task);
-    const prompt = `black and white simple sketch of ${englishTask}, rough drawing, children's style, drawn with a single marker of consistent uniform line width, simple shapes, hand-drawn`;
+    const base64Body = imageDataUrl.includes(',') ? imageDataUrl.split(',')[1] : imageDataUrl;
 
     try {
         const res = await fetch(PROXY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
+            body: JSON.stringify({ image: base64Body })
         });
 
         if (!res.ok) {
@@ -137,7 +159,7 @@ async function generateAIDrawing(task) {
         if (/Failed to fetch|NetworkError|CORS/i.test(message)) {
             throw new Error('Не удалось достучаться до прокси-сервера — проверьте PROXY_URL в api.js и ALLOWED_ORIGIN в worker.js');
         }
-        throw new Error(`Не удалось сгенерировать рисунок. Подробности: ${message || 'нет ответа от сервера'}`);
+        throw new Error(`Не удалось изменить рисунок. Подробности: ${message || 'нет ответа от сервера'}`);
     }
 }
 
@@ -151,6 +173,7 @@ function blobToBase64(blob) {
 }
 
 window.generateTask = generateTask;
-window.generateAIDrawing = generateAIDrawing;
+window.checkGuess = checkGuess;
+window.transformDrawing = transformDrawing;
 
-console.log('🤖 Am I AI API loaded (только Hugging Face)');
+console.log('🤖 Am I AI API loaded');

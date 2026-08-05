@@ -1,14 +1,18 @@
 // ============================================================
 // GAME ENGINE
 // AM I AI
-// Multiplayer drawing experiment
+// Каждый рисует своё задание → ИИ меняет оба рисунка →
+// у каждого 30 секунд, чтобы угадать рисунок соперника —
+// можно пробовать несколько раз, пока не кончится время.
 // ============================================================
 
 let gameListenerStarted = false;
-let myVote = false;
-let selectedVoteId = null;
-let selectedVoteLabel = null;
-let activeDrawTask = null; // task currently rendered on the canvas — guards against re-initializing mid-drawing
+let activeDrawTask = null;   // задание, которое сейчас на холсте — не даём сбросить его повторно
+let activeGuessRole = null;  // чей (изменённый) рисунок сейчас показан для угадывания
+
+let currentAnswer = '';      // эталонный ответ для текущего раунда угадывания
+let localAttempts = [];      // все попытки игрока в этом раунде: [{ text, correct }]
+let guessSolved = false;     // угадал ли игрок в отведённое время
 
 let gameRef = null;
 let gameCallback = null;
@@ -31,12 +35,20 @@ async function startGame() {
 
     if (myRole !== "player1") return;
 
-    const task = await generateTask();
+    const task1 = await generateTask();
+    let task2 = await generateTask();
+    let attempts = 0;
+    while (task2.task === task1.task && attempts < 5) {
+        task2 = await generateTask();
+        attempts++;
+    }
+
     await ref.set({
-        task: task,
         status: "drawing",
+        tasks: { player1: task1, player2: task2 },
         drawings: {},
-        votes: {},
+        transformed: {},
+        guesses: {},
         aiStarted: false,
         finished: false
     });
@@ -62,34 +74,49 @@ function listenGame() {
         console.log('📡 Обновление игры:', game);
 
         if (game.status === "drawing") {
-            // Проверяем, есть ли рисунок этого игрока
+            const myTask = game.tasks ? game.tasks[myRole]?.task : null;
             const hasMyDrawing = game.drawings && game.drawings[myRole] && game.drawings[myRole].finished;
 
             if (hasMyDrawing) {
-                // Если игрок уже отправил рисунок - показываем экран ожидания
                 activeDrawTask = null;
-                openWait();
-            } else if (activeDrawTask !== game.task) {
-                // Открываем экран рисования только один раз за задание.
-                // Иначе каждое обновление комнаты (например, когда второй игрок
-                // отправляет свой рисунок) заново сбрасывало бы холст и таймер.
-                activeDrawTask = game.task;
-                openDrawScreen(game.task);
+                openWait('draw');
+            } else if (myTask && activeDrawTask !== myTask) {
+                // Открываем экран рисования только один раз за задание —
+                // иначе каждое обновление комнаты заново сбрасывало бы холст.
+                activeDrawTask = myTask;
+                openDrawScreen(myTask);
+            }
+
+            const bothDrew = game.drawings && game.drawings.player1?.finished && game.drawings.player2?.finished;
+            if (bothDrew && !game.aiStarted) {
+                startTransform(game);
             }
         }
 
-        if (game.drawings && game.drawings.player1 && game.drawings.player2 && !game.aiStarted) {
-            startAI();
+        if (game.status === "processing") {
+            openWait('process');
         }
 
-        if (game.drawings && game.drawings.player1 && game.drawings.player2 && game.drawings.ai) {
-            openVoting(game.drawings);
+        if (game.status === "guessing") {
+            const myGuessDone = game.guesses && game.guesses[myRole] && game.guesses[myRole].finished;
+
+            if (myGuessDone) {
+                activeGuessRole = null;
+                stopGuessTimer();
+                openWait('guessWait');
+            } else {
+                openGuessScreen(game);
+            }
+
+            const bothGuessed = game.guesses && game.guesses.player1?.finished && game.guesses.player2?.finished;
+            if (bothGuessed && !game.finished) {
+                finishGuessing();
+            }
         }
 
-        if (game.finished && game.finalVotes) {
+        if (game.status === "results") {
+            stopGuessTimer();
             showResultScreen(game);
-        } else if (game.votes && game.votes.player1 && game.votes.player2 && !game.finished) {
-            finishGame(game.votes);
         }
     };
 
@@ -115,7 +142,6 @@ function openDrawScreen(task) {
     const text = document.getElementById("task-text");
     if (text) text.textContent = task;
 
-    // Сбрасываем состояние рисования
     if (typeof window.resetDrawingState === 'function') {
         window.resetDrawingState();
     }
@@ -132,194 +158,216 @@ function openDrawScreen(task) {
 }
 
 // ============================================================
-// AI START
+// AI TRANSFORM
 // ============================================================
 
-async function startAI() {
+async function startTransform(game) {
+    if (myRole !== 'player1') return; // трансформацию запускает только первый игрок
+
     const ref = database.ref('rooms/' + currentRoomId + '/game');
-    const snap = await ref.once('value');
-    const game = snap.val();
-    if (!game || game.aiStarted) return;
-
-    const aiStartedRef = ref.child('aiStarted');
-    const res = await aiStartedRef.transaction(current => {
-        if (current) return;
-        return true;
-    });
-
+    const res = await ref.child('aiStarted').transaction(current => current ? undefined : true);
     if (!res.committed) return;
 
-    await startAIDrawing(game.task);
-}
+    try {
+        await ref.child('status').set('processing');
 
-// ============================================================
-// VOTING
-// ============================================================
+        const stopSignal = { done: false };
+        if (typeof animateFakeProgress === 'function') animateFakeProgress(stopSignal);
 
-function openVoting(drawings) {
-    const screen = document.getElementById("vote-screen");
-    if (screen && !screen.classList.contains("hidden")) return;
+        const [t1, t2] = await Promise.all([
+            transformDrawing(game.drawings.player1.image),
+            transformDrawing(game.drawings.player2.image)
+        ]);
 
-    if (!drawings.player1?.image || !drawings.player2?.image || !drawings.ai?.image) {
-        console.warn('Не все рисунки готовы');
-        return;
-    }
+        stopSignal.done = true;
+        if (typeof updateProgress === 'function') updateProgress(100);
 
-    showScreen("vote-screen");
-
-    const container = document.getElementById("images-container");
-    if (!container) return;
-    container.innerHTML = "";
-
-    // Метки специально анонимны (A / B / C) — реальная роль (Игрок 1/2/ИИ)
-    // не должна быть видна до момента голосования, иначе это выдаёт ответ.
-    const cards = [
-        { id: "player1", image: drawings.player1.image },
-        { id: "player2", image: drawings.player2.image },
-        { id: "ai", image: drawings.ai.image }
-    ];
-
-    shuffle(cards);
-    const letters = ["A", "B", "C"];
-
-    cards.forEach((item, index) => {
-        const displayLabel = `Экспонат ${letters[index]}`;
-
-        const card = document.createElement("div");
-        card.className = "vote-card";
-        card.dataset.id = item.id;
-
-        const img = document.createElement("img");
-        img.src = item.image;
-        img.alt = displayLabel;
-        img.loading = "lazy";
-
-        const label = document.createElement("div");
-        label.className = "vote-label";
-        label.textContent = displayLabel;
-
-        card.appendChild(img);
-        card.appendChild(label);
-
-        card.onclick = () => selectVote(card, item.id, displayLabel);
-        container.appendChild(card);
-    });
-
-    document.getElementById('vote-confirm')?.classList.add('hidden');
-    selectedVoteId = null;
-    selectedVoteLabel = null;
-}
-
-function selectVote(card, id, displayLabel) {
-    document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    selectedVoteId = id;
-    selectedVoteLabel = displayLabel;
-
-    const confirmEl = document.getElementById('vote-confirm');
-    const textEl = document.getElementById('vote-selected-text');
-    if (confirmEl && textEl) {
-        textEl.textContent = `Выбор: ${displayLabel}`;
-        confirmEl.classList.remove('hidden');
-    }
-}
-
-// ============================================================
-// VOTE
-// ============================================================
-
-async function vote(id) {
-    if (myVote) return;
-    myVote = true;
-
-    await database
-        .ref("rooms/" + currentRoomId + "/game/votes/" + myRole)
-        .set({
-            answer: id,
-            time: Date.now()
+        await ref.update({
+            transformed: {
+                player1: { image: t1, time: Date.now() },
+                player2: { image: t2, time: Date.now() }
+            },
+            status: 'guessing'
         });
 
-    document.querySelectorAll('.vote-card').forEach(c => {
-        c.style.opacity = '0.5';
-        c.style.pointerEvents = 'none';
-    });
-
-    document.getElementById('vote-confirm')?.classList.add('hidden');
+    } catch (error) {
+        console.error('❌ Ошибка трансформации:', error);
+        alert(error?.message || 'Не удалось изменить рисунки. Попробуйте ещё раз.');
+        await ref.update({ aiStarted: false, status: 'drawing' });
+    }
 }
 
 // ============================================================
-// FINISH
+// GUESS SCREEN
 // ============================================================
 
-async function finishGame(votes) {
+function openGuessScreen(game) {
+    const otherRole = myRole === 'player1' ? 'player2' : 'player1';
+    const image = game.transformed?.[otherRole]?.image;
+    if (!image) return;
+
+    showScreen('guess-screen');
+
+    // Если экран уже открыт для этого же раунда — не сбрасываем прогресс игрока
+    if (activeGuessRole === otherRole) return;
+    activeGuessRole = otherRole;
+
+    const img = document.getElementById('guess-image');
+    if (img) img.src = image;
+
+    const input = document.getElementById('guess-input');
+    if (input) {
+        input.value = '';
+        input.disabled = false;
+        input.focus();
+    }
+
+    const submitBtn = document.getElementById('guess-submit-btn');
+    if (submitBtn) submitBtn.disabled = false;
+
+    const feedback = document.getElementById('guess-feedback');
+    if (feedback) {
+        feedback.textContent = '';
+        feedback.className = 'guess-feedback';
+    }
+
+    const list = document.getElementById('guess-attempts');
+    if (list) list.innerHTML = '';
+
+    currentAnswer = game.tasks?.[otherRole]?.answer || '';
+    localAttempts = [];
+    guessSolved = false;
+
+    startGuessTimer(() => finalizeGuessOnTimeout());
+}
+
+function renderAttempts() {
+    const list = document.getElementById('guess-attempts');
+    if (!list) return;
+    list.innerHTML = '';
+    localAttempts.forEach(a => {
+        const li = document.createElement('li');
+        li.className = a.correct ? 'correct' : 'wrong';
+        li.textContent = a.text;
+        list.appendChild(li);
+    });
+    list.scrollTop = list.scrollHeight;
+}
+
+function submitGuessAttempt() {
+    if (guessSolved) return;
+
+    const input = document.getElementById('guess-input');
+    const text = (input?.value || '').trim();
+    if (!text) return;
+
+    const correct = checkGuess(text, currentAnswer);
+    localAttempts.push({ text, correct });
+    renderAttempts();
+    if (input) input.value = '';
+
+    const feedback = document.getElementById('guess-feedback');
+    if (feedback) {
+        feedback.textContent = correct ? 'Точно! Раунд для вас окончен.' : 'Не то — попробуйте ещё раз';
+        feedback.className = 'guess-feedback ' + (correct ? 'correct' : 'wrong');
+    }
+
+    if (correct) {
+        guessSolved = true;
+        stopGuessTimer();
+        finalizeMyGuess();
+    }
+}
+
+function finalizeGuessOnTimeout() {
+    if (guessSolved) return;
+
+    const input = document.getElementById('guess-input');
+    const leftover = (input?.value || '').trim();
+    if (leftover) {
+        localAttempts.push({ text: leftover, correct: checkGuess(leftover, currentAnswer) });
+        renderAttempts();
+    }
+
+    const feedback = document.getElementById('guess-feedback');
+    if (feedback) {
+        feedback.textContent = 'Время вышло';
+        feedback.className = 'guess-feedback wrong';
+    }
+
+    finalizeMyGuess();
+}
+
+async function finalizeMyGuess() {
+    stopGuessTimer();
+
+    const input = document.getElementById('guess-input');
+    if (input) input.disabled = true;
+    const submitBtn = document.getElementById('guess-submit-btn');
+    if (submitBtn) submitBtn.disabled = true;
+
+    await database
+        .ref('rooms/' + currentRoomId + '/game/guesses/' + myRole)
+        .set({
+            attempts: localAttempts.map(a => a.text),
+            solved: guessSolved,
+            finished: true,
+            time: Date.now()
+        });
+}
+
+async function finishGuessing() {
     const ref = database.ref('rooms/' + currentRoomId + '/game');
     const snap = await ref.once('value');
-    const game = snap.val();
-    if (game && game.finished) return;
+    const current = snap.val();
+    if (current && current.finished) return;
 
-    if (!votes || !votes.player1 || !votes.player2) return;
-
-    const allowed = new Set(['player1', 'player2', 'ai']);
-    if (!allowed.has(votes.player1.answer) || !allowed.has(votes.player2.answer)) return;
-
-    await ref.update({
-        finished: true,
-        status: "finished",
-        finalVotes: votes
-    });
+    await ref.update({ finished: true, status: 'results' });
 }
 
 // ============================================================
 // RESULT
 // ============================================================
 
-function describeAnswer(vote) {
-    if (vote === 'ai') return 'рисунок нейросети';
-    if (vote === 'player1') return 'рисунок игрока 1';
-    if (vote === 'player2') return 'рисунок игрока 2';
-    return 'неизвестно';
-}
-
 function showResultScreen(game) {
     showScreen("result-screen");
 
-    const el = document.getElementById("result-text");
     const stamp = document.getElementById("result-icon");
     const title = document.getElementById("result-title");
+    const el = document.getElementById("result-text");
     const gallery = document.getElementById("reveal-gallery");
 
-    if (!el) return;
-
-    const p1Vote = game.finalVotes?.player1?.answer || null;
-    const p2Vote = game.finalVotes?.player2?.answer || null;
-    const p1Correct = p1Vote === 'ai';
-    const p2Correct = p2Vote === 'ai';
-    const aiCaught = p1Correct || p2Correct;
-
-    let text = "";
-    text += `<p>Игрок 1 указал на <span class="highlight">${describeAnswer(p1Vote)}</span> — <span class="${p1Correct ? 'correct' : 'wrong'}">${p1Correct ? 'точное попадание' : 'мимо'}</span>.</p>`;
-    text += `<p>Игрок 2 указал на <span class="highlight">${describeAnswer(p2Vote)}</span> — <span class="${p2Correct ? 'correct' : 'wrong'}">${p2Correct ? 'точное попадание' : 'мимо'}</span>.</p>`;
-    el.innerHTML = text;
+    const task1 = game.tasks?.player1?.task || '—';
+    const task2 = game.tasks?.player2?.task || '—';
+    const g1 = game.guesses?.player1; // игрок 1 угадывал рисунок игрока 2
+    const g2 = game.guesses?.player2; // игрок 2 угадывал рисунок игрока 1
 
     if (stamp) {
-        stamp.className = 'stamp ' + (aiCaught ? 'caught' : 'escaped');
-        stamp.textContent = aiCaught ? 'ИИ раскрыт' : 'ИИ не найден';
+        stamp.className = 'stamp caught';
+        stamp.textContent = 'Итоги раунда';
     }
     if (title) {
-        title.textContent = aiCaught ? 'Подделку нашли' : 'Нейросеть обманула всех';
+        title.textContent = 'Кто что нарисовал?';
     }
 
-    if (gallery && game.drawings) {
+    if (el) {
+        el.innerHTML =
+            renderPlayerResult('Игрок 1', task1, g2) +
+            renderPlayerResult('Игрок 2', task2, g1);
+    }
+
+    if (gallery && game.drawings && game.transformed) {
         gallery.innerHTML = "";
         const items = [
-            { image: game.drawings.player1?.image, label: 'Игрок 1', isAi: false },
-            { image: game.drawings.player2?.image, label: 'Игрок 2', isAi: false },
-            { image: game.drawings.ai?.image, label: 'Нейросеть', isAi: true }
+            { image: game.drawings.player1?.image, label: 'Оригинал — Игрок 1' },
+            { image: game.transformed.player1?.image, label: 'После ИИ (видел Игрок 2)' },
+            { image: game.drawings.player2?.image, label: 'Оригинал — Игрок 2' },
+            { image: game.transformed.player2?.image, label: 'После ИИ (видел Игрок 1)' }
         ];
         items.forEach(item => {
             if (!item.image) return;
             const card = document.createElement('div');
-            card.className = 'reveal-card' + (item.isAi ? ' is-ai' : '');
+            card.className = 'reveal-card';
             const img = document.createElement('img');
             img.src = item.image;
             img.alt = item.label;
@@ -334,15 +382,46 @@ function showResultScreen(game) {
     }
 }
 
+// Кто рисовал — что рисовал — угадал ли соперник и какими были все его попытки
+function renderPlayerResult(drawerLabel, task, guess) {
+    const attempts = guess?.attempts || [];
+    const solved = !!guess?.solved;
+
+    const attemptsHtml = attempts.length
+        ? attempts.map((a, i) => {
+            const isLast = i === attempts.length - 1;
+            const wasCorrect = solved && isLast;
+            return `<span class="attempt-chip ${wasCorrect ? 'correct' : ''}">${escapeHtml(a)}</span>`;
+        }).join('')
+        : '<span class="attempt-chip empty">не успел ответить</span>';
+
+    return `
+        <div class="result-block">
+            <p><span class="highlight">${drawerLabel}</span> рисовал: «${escapeHtml(task)}» — соперник
+                <span class="${solved ? 'correct' : 'wrong'}">${solved ? 'угадал' : 'не угадал'}</span>.
+            </p>
+            <div class="attempt-list">${attemptsHtml}</div>
+        </div>
+    `;
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // ============================================================
 // RESET
 // ============================================================
 
 function resetGameState() {
-    myVote = false;
-    selectedVoteId = null;
-    selectedVoteLabel = null;
     activeDrawTask = null;
+    activeGuessRole = null;
+    currentAnswer = '';
+    localAttempts = [];
+    guessSolved = false;
+    stopGuessTimer();
 }
 
 // ============================================================
@@ -367,28 +446,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('confirm-vote-btn')?.addEventListener('click', async () => {
-        if (!selectedVoteId) {
-            alert('Выберите рисунок!');
-            return;
-        }
-        await vote(selectedVoteId);
-    });
+    document.getElementById('guess-submit-btn')?.addEventListener('click', submitGuessAttempt);
 
-    document.getElementById('cancel-vote-btn')?.addEventListener('click', () => {
-        document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('selected'));
-        document.getElementById('vote-confirm')?.classList.add('hidden');
-        selectedVoteId = null;
-        selectedVoteLabel = null;
+    document.getElementById('guess-input')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') submitGuessAttempt();
     });
 });
-
-// ============================================================
-// UTILS
-// ============================================================
-
-function shuffle(array) {
-    return array.slice().sort(() => Math.random() - 0.5);
-}
 
 console.log("🎮 Am I AI game loaded");

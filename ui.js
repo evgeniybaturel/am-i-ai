@@ -1,7 +1,7 @@
 // ============================================================
 // UI CONTROLLER
 // AM I AI
-// Screen manager
+// Screen manager + переиспользуемый кольцевой таймер
 // ============================================================
 
 function showScreen(id) {
@@ -25,28 +25,38 @@ function openLobby() {
     showScreen("lobby-screen");
 }
 
-function openDrawing() {
-    showScreen("draw-screen");
+const WAIT_TEXT = {
+    draw: {
+        title: 'Ждём соперника',
+        text: 'Вы закончили — осталось дождаться, пока дорисует соперник.'
+    },
+    process: {
+        title: 'ИИ меняет рисунки',
+        text: 'Нейросеть перерисовывает обе работы — это займёт немного времени.'
+    },
+    guessWait: {
+        title: 'Ждём соперника',
+        text: 'Вы уже ответили — осталось дождаться, пока соперник тоже закончит угадывать.'
+    }
+};
 
-    setTimeout(() => {
-        if (typeof initCanvas === "function") {
-            initCanvas();
-        }
-    }, 100);
-}
-
-function openWait() {
+function openWait(kind) {
     showScreen("wait-screen");
+
+    const stage = WAIT_TEXT[kind] || WAIT_TEXT.draw;
+    const titleEl = document.getElementById('wait-title');
+    const textEl = document.getElementById('wait-text');
+    if (titleEl) titleEl.textContent = stage.title;
+    if (textEl) textEl.textContent = stage.text;
+
+    const progressWrap = document.querySelector('#wait-screen .progress-bar');
     const progress = document.getElementById('ai-progress');
-    if (progress) progress.style.width = '0%';
-}
-
-function openVote() {
-    showScreen("vote-screen");
-}
-
-function openResult() {
-    showScreen("result-screen");
+    if (kind === 'process') {
+        if (progressWrap) progressWrap.classList.remove('hidden');
+    } else {
+        if (progressWrap) progressWrap.classList.add('hidden');
+        if (progress) progress.style.width = '0%';
+    }
 }
 
 function updateRoomCode(code) {
@@ -55,48 +65,70 @@ function updateRoomCode(code) {
 }
 
 // ============================================================
-// TIMER
+// КОЛЬЦЕВОЙ ТАЙМЕР (переиспользуемый)
+// Используется и на экране рисования, и на экране угадывания —
+// каждый со своими id элементов и своей длительностью.
 // ============================================================
 
-let timerValue = 60;
-let timerInterval = null;
+function createRingTimer(textId, progressId, totalSeconds) {
+    let interval = null;
+    let value = totalSeconds;
+    const circumference = 2 * Math.PI * 15.9155;
 
-function startTimer() {
-    if (timerInterval) clearInterval(timerInterval);
-    timerValue = 60;
-    const timer = document.getElementById("timer");
-    const progress = document.getElementById("timer-progress");
-    
-    if (timer) timer.textContent = timerValue;
-    if (progress) {
-        const circumference = 2 * Math.PI * 15.9155;
-        progress.style.strokeDasharray = circumference;
-        progress.style.strokeDashoffset = 0;
+    function render() {
+        const textEl = document.getElementById(textId);
+        const progressEl = document.getElementById(progressId);
+        if (textEl) textEl.textContent = value;
+        if (progressEl) {
+            progressEl.style.strokeDasharray = circumference;
+            const offset = circumference - (value / totalSeconds) * circumference;
+            progressEl.style.strokeDashoffset = offset;
+            progressEl.classList.toggle('urgent', value <= 10);
+        }
     }
 
-    timerInterval = setInterval(() => {
-        timerValue--;
-        if (timer) timer.textContent = timerValue;
-        
-        if (progress) {
-            const circumference = 2 * Math.PI * 15.9155;
-            const offset = circumference - (timerValue / 60) * circumference;
-            progress.style.strokeDashoffset = offset;
+    return {
+        start(onExpire) {
+            this.stop();
+            value = totalSeconds;
+            render();
+            interval = setInterval(() => {
+                value--;
+                render();
+                if (value <= 0) {
+                    this.stop();
+                    if (onExpire) onExpire();
+                }
+            }, 1000);
+        },
+        stop() {
+            if (interval) clearInterval(interval);
+            interval = null;
         }
-        
-        if (timerValue <= 0) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            if (typeof window.finishDrawing === 'function') {
-                window.finishDrawing();
-            }
+    };
+}
+
+const drawTimer = createRingTimer('timer', 'timer-progress', 60);
+const guessTimer = createRingTimer('guess-timer', 'guess-timer-progress', 30);
+
+function startTimer() {
+    drawTimer.start(() => {
+        if (typeof window.finishDrawing === 'function') {
+            window.finishDrawing();
         }
-    }, 1000);
+    });
 }
 
 function stopTimer() {
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = null;
+    drawTimer.stop();
+}
+
+function startGuessTimer(onExpire) {
+    guessTimer.start(onExpire);
+}
+
+function stopGuessTimer() {
+    guessTimer.stop();
 }
 
 // ============================================================
