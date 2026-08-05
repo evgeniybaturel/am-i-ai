@@ -4,7 +4,7 @@
 // ============================================================
 
 // ⚠️ После деплоя прокси (см. cf-worker/DEPLOY.md) вставьте сюда его адрес.
-const PROXY_URL = 'https://am-i-ai-proxy.YOUR-SUBDOMAIN.workers.dev';
+const PROXY_URL = 'https://am-i-ai-proxy.evgeniybaturel.workers.dev';
 
 // ============================================================
 // ЗАДАНИЯ
